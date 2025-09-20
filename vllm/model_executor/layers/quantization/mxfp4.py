@@ -161,11 +161,17 @@ class Mxfp4MoEMethod(FusedMoEMethodBase):
             "No MXFP4 MoE backend (FlashInfer/Marlin/Triton) available."
             "Please check your environment and try again.")
         self._cache_permute_indices: dict[torch.Size, torch.Tensor] = {}
+        # NOTE: with `use_marlin`, we repack weights and create a
+        # new nn.Parameter object in `process_weights_after_loading`.
+        # To preserve any additional attributes passed during `create_weights`,
+        # we store them as a class attribute here.
+        self._extra_weight_attrs = {}
 
     def create_weights(self, layer: torch.nn.Module, num_experts: int,
                        hidden_size: int, intermediate_size_per_partition: int,
                        params_dtype: torch.dtype, **extra_weight_attrs):
         self.num_experts = num_experts
+        self._extra_weight_attrs = extra_weight_attrs
         weight_dtype = torch.uint8
         scale_dtype = torch.uint8
 
@@ -293,7 +299,7 @@ class Mxfp4MoEMethod(FusedMoEMethodBase):
 
     def process_weights_after_loading(self, layer):
         if self.mxfp4_backend == Mxfp4Backend.MARLIN:
-            prepare_moe_fp4_layer_for_marlin(layer)
+            prepare_moe_fp4_layer_for_marlin(layer,  self._extra_weight_attrs)
         elif (self.mxfp4_backend == Mxfp4Backend.SM100_FI_MXFP4_MXFP8_TRTLLM
               or self.mxfp4_backend == Mxfp4Backend.SM100_FI_MXFP4_BF16):
             from flashinfer.fp4_quantization import (

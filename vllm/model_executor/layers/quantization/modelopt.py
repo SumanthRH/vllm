@@ -1033,6 +1033,8 @@ class ModelOptNvFp4FusedMoE(FusedMoEMethodBase):
                 f"Using FlashInfer {self.flashinfer_moe_backend.value} kernels"
                 " for ModelOptNvFp4FusedMoE.")
 
+        self._extra_weight_attrs = {}
+
     def maybe_make_prepare_finalize(
         self,
         moe: FusedMoEConfig,
@@ -1080,6 +1082,7 @@ class ModelOptNvFp4FusedMoE(FusedMoEMethodBase):
                              " dynamic quantization is not supported.")
 
         layer.num_experts = num_experts
+        self._extra_weight_attrs = extra_weight_attrs
         layer.params_dtype = params_dtype
         layer.quant_config = self.quant_config
         weight_dtype = torch.uint8
@@ -1334,7 +1337,7 @@ class ModelOptNvFp4FusedMoE(FusedMoEMethodBase):
             del layer.w13_weight_scale
         elif self.use_marlin:
             # Marlin processing
-            prepare_moe_fp4_layer_for_marlin(layer)
+            prepare_moe_fp4_layer_for_marlin(layer,  self._extra_weight_attrs)
             del layer.g1_alphas
             del layer.g2_alphas
             del layer.w13_input_scale_quant

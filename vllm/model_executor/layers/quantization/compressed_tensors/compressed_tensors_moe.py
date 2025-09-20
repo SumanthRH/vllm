@@ -148,6 +148,7 @@ class CompressedTensorsW4A4MoeMethod(CompressedTensorsMoEMethod):
         self.use_marlin = _nvfp4.use_marlin
         self.group_size = 16
         self.layer = layer
+        self._extra_weight_attrs = {}
 
     def create_weights(self, layer: torch.nn.Module, num_experts: int,
                        hidden_size: int, intermediate_size_per_partition: int,
@@ -155,6 +156,7 @@ class CompressedTensorsW4A4MoeMethod(CompressedTensorsMoEMethod):
 
         layer.num_experts = num_experts
         layer.params_dtype = params_dtype
+        self._extra_weight_attrs = extra_weight_attrs
 
         w13_weight = torch.nn.Parameter(
             torch.empty(
@@ -272,7 +274,7 @@ class CompressedTensorsW4A4MoeMethod(CompressedTensorsMoEMethod):
             1 / layer.w2_weight_global_scale.data, requires_grad=False)
 
         if self.use_marlin:
-            prepare_moe_fp4_layer_for_marlin(layer)
+            prepare_moe_fp4_layer_for_marlin(layer, self._extra_weight_attrs)
             return
 
         # swizzle weight scales
