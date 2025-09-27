@@ -112,6 +112,7 @@ class AutoWeightsLoader:
         skip_prefixes: Optional[list[str]] = None,
         skip_substrs: Optional[list[str]] = None,
         ignore_unexpected_prefixes: Optional[list[str]] = None,
+        ignore_unexpected_suffixes: Optional[list[str]] = None,
     ) -> None:
         super().__init__()
 
@@ -119,6 +120,7 @@ class AutoWeightsLoader:
         self.skip_prefixes = skip_prefixes or []
         self.skip_substrs = skip_substrs or []
         self.ignore_unexpected_prefixes = ignore_unexpected_prefixes or []
+        self.ignore_unexpected_suffixes = ignore_unexpected_suffixes or []
         # update default skip_substrs
         self.skip_substrs += self.ROTARY_EMBEDS_UNUSED_WEIGHTS
 
@@ -152,8 +154,9 @@ class AutoWeightsLoader:
                 or any(substr in qualname for substr in self.skip_substrs))
 
     def _can_ignore_unexpected(self, qualname: str) -> bool:
-        return any(
-            qualname.startswith(p) for p in self.ignore_unexpected_prefixes)
+        iup = (qualname.startswith(p) for p in self.ignore_unexpected_prefixes)
+        ius = (qualname.endswith(s) for s in self.ignore_unexpected_suffixes)
+        return any(iup) or any(ius)
 
     def _load_param(
         self,
