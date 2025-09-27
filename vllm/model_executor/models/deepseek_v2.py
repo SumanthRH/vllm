@@ -64,6 +64,7 @@ from vllm.model_executor.layers.vocab_parallel_embedding import (
 from vllm.model_executor.model_loader.weight_utils import (
     default_weight_loader, maybe_remap_kv_scale_name)
 from vllm.model_executor.models.utils import sequence_parallel_chunk
+<<<<<<< HEAD
 from vllm.platforms import current_platform
 from vllm.sequence import IntermediateTensors
 from vllm.utils import cdiv, direct_register_custom_op
@@ -71,6 +72,9 @@ from vllm.utils.deep_gemm import fp8_mqa_logits, fp8_paged_mqa_logits
 from vllm.v1.attention.backends.mla.indexer import (DeepseekV32IndexerBackend,
                                                     DeepseekV32IndexerMetadata)
 from vllm.v1.kv_cache_interface import KVCacheSpec, MLAAttentionSpec
+=======
+from vllm.sequence import IntermediateTensors
+>>>>>>> a5354b3ed ([Bugfix][WideEP] Apply TP Attn + EP MoE fix to other models (#24982))
 
 from .interfaces import MixtureOfExperts, SupportsLoRA, SupportsPP
 from .utils import (PPMissingLayer, is_pp_missing_parameter,
