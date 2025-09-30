@@ -303,7 +303,8 @@ class Mxfp4MoEMethod(FusedMoEMethodBase):
         if not getattr(layer, "original_size", None):
             layer.original_size = True
             for param_name in ["w13_weight", "w13_bias", "w2_weight", "w2_bias", "w13_weight_scale", "w2_weight_scale"]:
-                setattr(layer, f"original_size_{param_name}", getattr(layer, param_name).shape)
+                setattr(layer, f"original_size_{param_name}", getattr(getattr(layer, param_name), "original_size", None))
+                print(f"Setting to original shape for param {param_name}: {getattr(getattr(layer, param_name), "original_size", None)}")
 
         if self.mxfp4_backend == Mxfp4Backend.MARLIN:
             prepare_moe_fp4_layer_for_marlin(layer,  self._extra_weight_attrs)

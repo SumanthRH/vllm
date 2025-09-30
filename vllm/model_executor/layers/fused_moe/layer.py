@@ -1179,6 +1179,9 @@ class FusedMoE(CustomOp):
                       expert_id: int,
                       return_success: bool = False) -> Optional[bool]:
 
+        if not getattr(param, "original_size", None):
+            param.original_size = param.shape
+
         if self.quant_config and self.quant_config.get_name() == "mxfp4":
             print(f"Size of the original param: {param.shape}, Size of the loaded weights: {loaded_weight.shape}, Name: {weight_name}, Shard id: {shard_id}, expert id {expert_id}. Original size: {getattr(param, 'original_size', None)}", flush=True)
             try:
