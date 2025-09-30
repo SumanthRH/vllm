@@ -64,7 +64,6 @@ from vllm.model_executor.layers.vocab_parallel_embedding import (
 from vllm.model_executor.model_loader.weight_utils import (
     default_weight_loader, maybe_remap_kv_scale_name)
 from vllm.model_executor.models.utils import sequence_parallel_chunk
-<<<<<<< HEAD
 from vllm.platforms import current_platform
 from vllm.sequence import IntermediateTensors
 from vllm.utils import cdiv, direct_register_custom_op
@@ -72,9 +71,6 @@ from vllm.utils.deep_gemm import fp8_mqa_logits, fp8_paged_mqa_logits
 from vllm.v1.attention.backends.mla.indexer import (DeepseekV32IndexerBackend,
                                                     DeepseekV32IndexerMetadata)
 from vllm.v1.kv_cache_interface import KVCacheSpec, MLAAttentionSpec
-=======
-from vllm.sequence import IntermediateTensors
->>>>>>> a5354b3ed ([Bugfix][WideEP] Apply TP Attn + EP MoE fix to other models (#24982))
 
 from .interfaces import MixtureOfExperts, SupportsLoRA, SupportsPP
 from .utils import (PPMissingLayer, is_pp_missing_parameter,
@@ -587,43 +583,44 @@ def sparse_attn_indexer(
     topk_indices_buffer[:hidden_states.shape[0]] = -1
     if has_prefill:
         prefill_metadata = attn_metadata.prefill
-        for chunk in prefill_metadata.chunks:
-            k_fp8 = torch.empty([chunk.total_seq_lens, head_dim],
-                                device=k.device,
-                                dtype=torch.float8_e4m3fn)
-            k_scale = torch.empty([chunk.total_seq_lens, 1],
-                                  device=k.device,
-                                  dtype=torch.float32)
-            cp_gather_indexer_k_quant_cache(
-                kv_cache,
-                k_fp8,
-                k_scale,
-                chunk.block_table,
-                chunk.cu_seq_lens,
-                chunk.num_reqs,
-            )
-            logits = fp8_mqa_logits(
-                q_fp8[chunk.token_start:chunk.token_end],
-                (k_fp8, k_scale),
-                weights[chunk.token_start:chunk.token_end],
-                chunk.cu_seqlen_ks,
-                chunk.cu_seqlen_ke,
-            )
-            topk_indices = logits.topk(min(topk_tokens, logits.shape[-1]),
-                                       dim=-1)[1]
-            topk_indices -= chunk.cu_seqlen_ks[:, None]
-            mask_lo = topk_indices >= 0
-            mask_hi = topk_indices - (chunk.cu_seqlen_ke -
-                                      chunk.cu_seqlen_ks)[:, None] < 0
-            mask = torch.full_like(topk_indices,
-                                   False,
-                                   dtype=torch.bool,
-                                   device=topk_indices.device)
-            mask = mask_lo & mask_hi
-            topk_indices = topk_indices.masked_fill(~mask, -1)
-            topk_indices_buffer[
-                chunk.token_start:chunk.token_end, :topk_indices.
-                shape[-1]] = topk_indices.to(dtype=torch.int32)
+        num_prefills = attn_metadata.num_prefills
+        k_fp8 = torch.empty([prefill_metadata.total_seq_lens, head_dim],
+                            device=k.device,
+                            dtype=torch.float8_e4m3fn)
+        k_scale = torch.empty([prefill_metadata.total_seq_lens, 1],
+                              device=k.device,
+                              dtype=torch.float32)
+        cp_gather_indexer_k_quant_cache(
+            kv_cache,
+            k_fp8,
+            k_scale,
+            prefill_metadata.block_table,
+            prefill_metadata.cu_seq_lens,
+            num_prefills,
+        )
+        cu_seqlen_ks = prefill_metadata.cu_seqlen_ks
+        cu_seqlen_ke = prefill_metadata.cu_seqlen_ke
+        num_tokens = attn_metadata.num_actual_tokens
+        logits = fp8_mqa_logits(
+            q_fp8[num_decode_tokens:num_tokens],
+            (k_fp8, k_scale),
+            weights[num_decode_tokens:num_tokens],
+            cu_seqlen_ks,
+            cu_seqlen_ke,
+        )
+        topk_indices = logits.topk(min(topk_tokens, logits.shape[-1]),
+                                   dim=-1)[1]
+        topk_indices -= cu_seqlen_ks[:, None]
+        mask_lo = topk_indices >= 0
+        mask_hi = topk_indices - (cu_seqlen_ke - cu_seqlen_ks)[:, None] < 0
+        mask = torch.full_like(topk_indices,
+                               False,
+                               dtype=torch.bool,
+                               device=topk_indices.device)
+        mask = mask_lo & mask_hi
+        topk_indices = topk_indices.masked_fill(~mask, -1)
+        topk_indices_buffer[num_decode_tokens:num_tokens, :topk_indices.
+                            shape[-1]] = topk_indices.to(dtype=torch.int32)
 
     if has_decode:
         decode_metadata = attn_metadata.decode
