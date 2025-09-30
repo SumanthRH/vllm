@@ -1180,14 +1180,25 @@ class FusedMoE(CustomOp):
                       return_success: bool = False) -> Optional[bool]:
 
         if self.quant_config and self.quant_config.get_name() == "mxfp4":
-            # (FIXME) for gpt-oss all experts are combined
-            if "bias" in weight_name:
-                dim1 = loaded_weight.shape[1]
-                param.data[:, :dim1].copy_(loaded_weight)
-            else:
-                dim1 = loaded_weight.shape[1]
-                dim2 = loaded_weight.shape[2]
-                param.data[:, :dim1, :dim2].copy_(loaded_weight)
+            print(f"Size of the original param: {param.shape}, Size of the loaded weights: {loaded_weight.shape}, Name: {weight_name}, Shard id: {shard_id}, expert id {expert_id}. Original size: {getattr(param, 'original_size', None)}", flush=True)
+            try:
+                # (FIXME) for gpt-oss all experts are combined
+                if "bias" in weight_name:
+                    dim1 = loaded_weight.shape[1]
+                    # param = torch.nn.Parameter(loaded_weight, requires_grad=False)
+                    # param.data[:, :dim1].copy_(loaded_weight)
+                    if getattr(param, "original_size", None):
+                        param.data = torch.zeros(param.shape)
+                    param.data[:, :dim1].copy_(loaded_weight)
+                else:
+                    dim1 = loaded_weight.shape[1]
+                    dim2 = loaded_weight.shape[2]
+                    if getattr(param, "original_size", None):
+                        param.data = torch.zeros(param.shape)
+                    param.data[:, :dim1, :dim2].copy_(loaded_weight)
+            except Exception as e:
+                print(f"EXCEPTION IN WEIGHT_LOADER: Size of the original param: {param.shape}, Size of the loaded weights: {loaded_weight.shape}, Name: {weight_name}, Shard id: {shard_id}, expert id {expert_id}. Original size: {getattr(param, 'original_size', None)}", flush=True)
+                raise e
             return True if return_success else None
 
         expert_id = self._map_global_expert_id_to_local_expert_id(expert_id)

@@ -149,12 +149,12 @@ def prepare_fp4_layer_for_marlin(layer: torch.nn.Module) -> None:
     # Repack weights to marlin format
     perm = torch.empty(0, dtype=torch.int, device=device)
     qweight = layer.weight.view(torch.int32).T.contiguous()
-
     marlin_qweight = ops.gptq_marlin_repack(b_q_weight=qweight,
                                             perm=perm,
                                             size_k=part_size_k,
                                             size_n=part_size_n,
                                             num_bits=4)
+    print(f"Oorignal arsg: {qweight.shape}, {part_size_k=}, {part_size_n=} marlin weight shape: {marlin_qweight.shape}")
     layer.weight = torch.nn.Parameter(marlin_qweight, requires_grad=False)
 
     # WEIGHT SCALES
@@ -224,7 +224,7 @@ def prepare_moe_fp4_layer_for_marlin(
         else:
             size_n, size_k = k, n
 
-        assert weight.shape == (e, size_n, size_k // 2)
+        assert weight.shape == (e, size_n, size_k // 2) # 3072
 
         for i in range(e):
             qweight = weight[i].view(torch.int32).T.contiguous()
@@ -234,6 +234,7 @@ def prepare_moe_fp4_layer_for_marlin(
                                                     size_k=size_k,
                                                     size_n=size_n,
                                                     num_bits=4)
+            print(f"Oorignal arsg: {qweight.shape}, {size_k=}, {size_n=} marlin weight shape: {marlin_qweight.shape}")
             tensor_list.append(marlin_qweight)
 
         weight = torch.cat([x.unsqueeze(0) for x in tensor_list], 0)

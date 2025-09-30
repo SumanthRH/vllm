@@ -68,6 +68,14 @@ class WorkerExtension:
         for name, p in self.model_runner.model.named_parameters():
             weights_updated = weights_updated and torch.allclose(p, torch.zeros_like(p))
         return weights_updated
+    
+    def process_after_loading(self):
+        from vllm.model_executor.model_loader.utils import process_weights_after_loading
+
+        process_weights_after_loading(
+                        self.model_runner.model, self.model_config, self.device
+        )
+        torch.cuda.synchronize()
 
 
 def rebuild_ipc(

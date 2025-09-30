@@ -54,6 +54,7 @@ class Mxfp4Backend(Enum):
 def get_mxfp4_backend():
     # Backend Selection
     if current_platform.is_cuda():
+        return Mxfp4Backend.SM90_FI_MXFP4_BF16
         if (current_platform.is_device_capability(90) and has_flashinfer()
                 and envs.VLLM_USE_FLASHINFER_MOE_MXFP4_BF16):
             logger.info_once("Using FlashInfer MXFP4 BF16 backend for SM90")
@@ -86,6 +87,7 @@ def get_mxfp4_backend():
                 "is not available. This may result in degraded performance. "
                 "Please `pip install vllm[flashinfer]` for best results.")
 
+        print(f"came here. flash is there : {has_flashinfer()}")
         # If FlashInfer is not available, try either Marlin or Triton
         if current_platform.get_device_capability(
         )[0] < 9 or not has_triton_kernels() or not is_torch_equal_or_newer(
@@ -298,6 +300,11 @@ class Mxfp4MoEMethod(FusedMoEMethodBase):
         set_weight_attrs(w2_bias, extra_weight_attrs)
 
     def process_weights_after_loading(self, layer):
+        if not getattr(layer, "original_size", None):
+            layer.original_size = True
+            for param_name in ["w13_weight", "w13_bias", "w2_weight", "w2_bias", "w13_weight_scale", "w2_weight_scale"]:
+                setattr(layer, f"original_size_{param_name}", getattr(layer, param_name).shape)
+
         if self.mxfp4_backend == Mxfp4Backend.MARLIN:
             prepare_moe_fp4_layer_for_marlin(layer,  self._extra_weight_attrs)
         elif (self.mxfp4_backend == Mxfp4Backend.SM100_FI_MXFP4_MXFP8_TRTLLM
@@ -543,8 +550,8 @@ class Mxfp4MoEMethod(FusedMoEMethodBase):
                                            requires_grad=False)
                 layer.w2_weight_scale = Parameter(w2_scale_interleaved,
                                                   requires_grad=False)
-            elif self.mxfp4_backend == Mxfp4Backend.SM90_FI_MXFP4_BF16:
-
+            elif self.mxfp4_backend == Mxfp4Backend.SM90_FI_MXFP4_BF16: # SUMANTH: ENTERS HERE FOR FLAASHINFER
+                print("Entering here in mxfp4 SM90_FI_MXFP4_BF16", flush=True)
                 def _interleave_mxfp4_cutlass_sm90(w):
                     w_shape = w.shape
                     w_interleaved = w.reshape(w_shape[0], w_shape[1],
@@ -566,13 +573,21 @@ class Mxfp4MoEMethod(FusedMoEMethodBase):
 
                 layer.w13_weight = torch.nn.Parameter(torch.cat([w3_w, w1_w],
                                                                 dim=1),
-                                                      requires_grad=False)
+                                                      requires_grad=False)  
                 layer.w13_bias = torch.nn.Parameter(w13_bias_swapped,
                                                     requires_grad=False)
                 layer.w13_weight_scale = torch.nn.Parameter(
                     w31_scales_interleaved, requires_grad=False)
                 layer.w2_weight_scale = torch.nn.Parameter(
                     w2_scales_interleaved, requires_grad=False)
+                for param_name in ["w13_weight", "w13_bias", "w13_weight_scale", "w2_weight_scale"]:
+                    param = getattr(layer, param_name)
+                    # TODO sumantrhh pick up here
+                    for key, value in self._extra_weight_attrs.items():
+                        setattr(param, key, value)
+                    if not getattr(param, "original_size", None):
+                        param.original_size = getattr(layer, f"original_size_{param_name}")
+                
         elif self.mxfp4_backend == Mxfp4Backend.TRITON:
             from triton_kernels.matmul_ogs import FlexCtx, PrecisionConfig
 
