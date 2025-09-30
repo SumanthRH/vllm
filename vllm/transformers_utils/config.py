@@ -951,6 +951,7 @@ def try_get_generation_config(
     model: str,
     trust_remote_code: bool,
     revision: Optional[str] = None,
+    config_format: Union[str, ConfigFormat] = "auto",
 ) -> Optional[GenerationConfig]:
     try:
         return GenerationConfig.from_pretrained(
@@ -963,6 +964,7 @@ def try_get_generation_config(
                 model,
                 trust_remote_code=trust_remote_code,
                 revision=revision,
+                config_format=config_format,
             )
             return GenerationConfig.from_model_config(config)
         except OSError:  # Not found
