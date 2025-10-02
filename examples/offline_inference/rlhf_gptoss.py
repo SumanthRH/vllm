@@ -39,6 +39,7 @@ from transformers import AutoModelForCausalLM
 
 from vllm import LLM, SamplingParams
 from vllm.utils import get_ip, get_open_port
+from mxfp4_loader import MXFP4QTensor
 
 
 class MyLLM(LLM):
@@ -51,6 +52,54 @@ class MyLLM(LLM):
         os.environ.pop("CUDA_VISIBLE_DEVICES", None)
         super().__init__(*args, **kwargs)
 
+def _to_oai_mxfp4_weight_only(model, block_size=32):
+    import gc
+
+    new_state_dict = {}
+
+    for name, param in model.state_dict().items():
+        # Only convert experts weights, skip bias and other modules
+        if "experts" in name and "bias" not in name:
+            param = param.transpose(-1, -2).contiguous()
+            quantized_tensors = []
+            scales_tensors = []
+            for expert in param:
+                quantized, scales = MXFP4QTensor.quantize(expert, block_size=block_size)
+                quantized_tensors.append(quantized._quantized_data)
+                scales_tensors.append(scales)
+            quantized = torch.stack(quantized_tensors)
+            scales = torch.stack(scales_tensors)
+
+            shape = quantized.shape
+            # Add converted weights and scales to state_dict
+            new_state_dict.update(
+                {
+                    f"{name}_blocks": quantized.view(shape[0], shape[1], -1, block_size // 2).cpu(),
+                    f"{name}_scales": scales.view(shape[0], shape[1], -1).cpu(),
+                }
+            )
+            # Free GPU memory immediately after processing each parameter
+            del param, quantized, scales
+            torch.cuda.empty_cache()
+            gc.collect()
+        else:
+            new_state_dict[name] = param
+
+    return new_state_dict
+
+
+def convert_to_mxfp4(param, block_size=32):
+    param = param.transpose(-1, -2).contiguous()
+    quantized_tensors = []
+    scales_tensors = []
+    for expert in param:
+        quantized, scales = MXFP4QTensor.quantize(expert, block_size=block_size)
+        quantized_tensors.append(quantized._quantized_data)
+        scales_tensors.append(scales)
+    quantized = torch.stack(quantized_tensors)
+    scales = torch.stack(scales_tensors)
+    shape = quantized.shape
+    return quantized.view(shape[0], shape[1], -1, block_size // 2), scales.view(shape[0], shape[1], -1)
 
 MODEL_NAME = "openai/gpt-oss-20b"
 TP_SIZE = 1
@@ -60,6 +109,7 @@ TP_SIZE = 1
 train_model = AutoModelForCausalLM.from_pretrained(MODEL_NAME, dtype=torch.bfloat16)
 device = "cuda:7"
 train_model.to(device)
+breakpoint()
 
 # Initialize Ray and set the visible devices. The vLLM engine will
 # be placed on GPUs 1 and 2.
@@ -133,11 +183,21 @@ for name, p in train_model.named_parameters():
     # if (name.endswith("experts.gate_up_proj_bias") or name.endswith("experts.down_proj_bias")):
     #     continue
     dtype_name = str(p.dtype).split(".")[-1]
-    handle = llm.collective_rpc.remote(
-        "update_weight", args=(name, dtype_name, p.shape)
-    )
-    model_update_group.broadcast(p, src=0, stream=torch.cuda.current_stream())
-    ray.get(handle)
+    if name.endswith("gate_up_proj") or name.endswith("down_proj"):
+        # downcast to mxfp4 and pack to int8
+        quantized, scale = convert_to_mxfp4(p)
+        for (param, param_dtype_name, param_name) in [(quantized, "uint8", f"{name}_blocks"), (scale, dtype_name, f"{name}_scale")]:
+            handle = llm.collective_rpc.remote(
+                "update_weight", args=(param_name, param_dtype_name, param.shape)
+            )
+            model_update_group.broadcast(param, src=0, stream=torch.cuda.current_stream())
+        ray.get(handle)
+    else:
+        handle = llm.collective_rpc.remote(
+            "update_weight", args=(name, dtype_name, p.shape)
+        )
+        model_update_group.broadcast(p, src=0, stream=torch.cuda.current_stream())
+        ray.get(handle)
     i += 1
 
 handle = llm.collective_rpc.remote("process_after_loading", args=())

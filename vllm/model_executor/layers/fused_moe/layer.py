@@ -1178,8 +1178,12 @@ class FusedMoE(CustomOp):
                       shard_id: str,
                       expert_id: int,
                       return_success: bool = False) -> Optional[bool]:
-
+        # set it the first time param is created
+        # param is modified in place, shoudl have the attribute
+        first_time = False
         if not getattr(param, "original_size", None):
+            print(f"WEIGHT LOADER : DEBUG: Original size for param {weight_name} is {param.shape}")
+            # first_time = True
             param.original_size = param.shape
 
         if self.quant_config and self.quant_config.get_name() == "mxfp4":
@@ -1190,14 +1194,16 @@ class FusedMoE(CustomOp):
                     dim1 = loaded_weight.shape[1]
                     # param = torch.nn.Parameter(loaded_weight, requires_grad=False)
                     # param.data[:, :dim1].copy_(loaded_weight)
-                    if getattr(param, "original_size", None):
-                        param.data = torch.zeros(param.shape)
+                    # if getattr(param, "original_size", None) and not first_time:
+                    #     print("WEIGHT_LOADER: hacking to original size")
+                    #     param.data = torch.zeros(param.original_size, dtype=param.dtype, device=param.device)
                     param.data[:, :dim1].copy_(loaded_weight)
                 else:
                     dim1 = loaded_weight.shape[1]
                     dim2 = loaded_weight.shape[2]
-                    if getattr(param, "original_size", None):
-                        param.data = torch.zeros(param.shape)
+                    # if getattr(param, "original_size", None) and not first_time:
+                    #     print("WEIGHT_LOADER: hacking to original size")
+                    #     param.data = torch.zeros(param.original_size, dtype=param.dtype, device=param.device)
                     param.data[:, :dim1, :dim2].copy_(loaded_weight)
             except Exception as e:
                 print(f"EXCEPTION IN WEIGHT_LOADER: Size of the original param: {param.shape}, Size of the loaded weights: {loaded_weight.shape}, Name: {weight_name}, Shard id: {shard_id}, expert id {expert_id}. Original size: {getattr(param, 'original_size', None)}", flush=True)

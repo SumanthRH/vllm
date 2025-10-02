@@ -305,7 +305,8 @@ class GptOssModel(nn.Module):
         tp_rank_start = tp_rank * per_rank_intermediate_size
         tp_rank_end = min((tp_rank + 1) * per_rank_intermediate_size,
                           intermediate_size)
-
+        once_13 = False
+        once_2 = False
         for name, weight in weights:
             # Skip layers on other devices.
             if is_pp_missing_parameter(name, self):
@@ -356,8 +357,17 @@ class GptOssModel(nn.Module):
                 # Handle MLP gate and up projection weights
                 # flat weight from (E, 2 * N, block_size, entry_per_block)
                 # to (E, 2 * N, -1), shouldn't trigger copy for contiguous
+                # if not once_13:
+                #     breakpoint()
+                #     once_13 = True
+                
+                # weight: torch.Size([32, 5760, 90, 16])
+                # num_experts: 32, intermediate_size: 2880
                 weight = weight.view(num_experts, 2 * intermediate_size,
                                      -1).contiguous()
+                # torch.Size([32, 5760, 1440])
+                print(f"Weight dtype is: {weight.dtype}")
+
 
                 # Extract gate and up projection parts
                 # since the weight is shuffled, we can slice directly
@@ -366,9 +376,9 @@ class GptOssModel(nn.Module):
                 else:
                     narrow_weight = weight[:,
                                            2 * tp_rank_start:2 * tp_rank_end,
-                                           ...]
+                                           ...] # torch.Size([32, 5760, 1440])
 
-                param = params_dict[name]
+                param = params_dict[name] # torch.Size([32, 5888])
                 weight_loader = getattr(param, "weight_loader",
                                         default_weight_loader)
                 weight_loader(param,
@@ -382,15 +392,26 @@ class GptOssModel(nn.Module):
                 # Handle MLP down projection weights
                 # same flatten here, but since 2 mx4 value are packed in 1
                 # uint8, divide by 2
+                # breakpoint()
+                # at initialization
+                # if not once_2:
+                #     breakpoint()
+                #     once_2 = True
+                # weight: torch.Size([32, 2880, 90, 16])
+                # num_experts: 32, intermediate_size: 2880 
+                # 32, 2*90*16, 2880 // 2  -> [32, 2880, 1440]
                 weight = weight.view(num_experts, -1,
                                      intermediate_size // 2).contiguous()
-                if use_ep:
+                # ep_rank_start: 0, ep_rank_end: 32
+                # tp_rank_start: 0, tp_rank_end: 2880
+                if use_ep: # False
                     narrow_weight = weight[ep_rank_start:ep_rank_end, ...]
                 else:
                     narrow_weight = weight[...,
                                            tp_rank_start // 2:tp_rank_end // 2]
+                    # torch.Size([32, 2880, 1440])
 
-                param = params_dict[name]
+                param = params_dict[name] # param shape: torch.Size([32, 2944, 1472])
                 weight_loader = getattr(param, "weight_loader",
                                         default_weight_loader)
                 weight_loader(param,
