@@ -36,11 +36,8 @@ class LlamaDecoderLayer(LlamaDecoderLayer):
         vllm_config: VllmConfig,
         disable_input_layernorm: bool,
         prefix: str = "",
-<<<<<<< HEAD
         config: LlamaConfig | None = None,
-=======
-        config: Optional[LlamaConfig] = None,
->>>>>>> upstream/releases/v0.11.0
+
     ) -> None:
         super().__init__(vllm_config, prefix=prefix, config=config)
 
@@ -77,7 +74,6 @@ class LlamaModel(nn.Module):
             prefix=maybe_prefix(prefix, "embed_tokens"),
         )
 
-<<<<<<< HEAD
         self.layers = nn.ModuleList(
             [
                 LlamaDecoderLayer(
@@ -101,19 +97,7 @@ class LlamaModel(nn.Module):
 
     def embed_input_ids(self, input_ids: torch.Tensor) -> torch.Tensor:
         return self.embed_tokens(input_ids)
-=======
-        self.layers = nn.ModuleList([
-            LlamaDecoderLayer(
-                vllm_config,
-                i == 0,
-                prefix=maybe_prefix(prefix, f"layers.{i + start_layer_id}"),
-                config=self.config,
-            ) for i in range(self.config.num_hidden_layers)
-        ])
-        self.fc = torch.nn.Linear(self.config.hidden_size * 2,
-                                  self.config.hidden_size,
-                                  bias=False)
->>>>>>> upstream/releases/v0.11.0
+
 
     def forward(
         self,

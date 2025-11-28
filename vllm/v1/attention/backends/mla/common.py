@@ -1120,7 +1120,7 @@ class MLACommonBaseImpl(MLAAttentionImpl[A], Generic[A]):
         indexer=None,
 <<<<<<< HEAD
         q_pad_num_heads: int | None = None,
-=======
+
         q_pad_num_heads: Optional[int] = None,
 >>>>>>> upstream/releases/v0.11.0
     ) -> None:
@@ -1145,6 +1145,7 @@ class MLACommonBaseImpl(MLAAttentionImpl[A], Generic[A]):
         self.is_aiter_triton_fp8_bmm_enabled = rocm_aiter_ops.is_fp8bmm_enabled()
 
     def process_weights_after_loading(self, act_dtype: torch.dtype):
+
         def get_layer_weight(layer):
             WEIGHT_NAMES = ("weight", "qweight", "weight_packed")
             for attr in WEIGHT_NAMES:
@@ -1153,6 +1154,7 @@ class MLACommonBaseImpl(MLAAttentionImpl[A], Generic[A]):
             raise AttributeError(
                 f"Layer '{layer}' has no recognized weight attribute: {WEIGHT_NAMES}."
             )
+
 
         def get_and_maybe_dequant_weights(layer: LinearBase):
             if not isinstance(layer.quant_method, UnquantizedLinearMethod):
@@ -1275,6 +1277,7 @@ class MLACommonImpl(MLACommonBaseImpl[M], Generic[M]):
 
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
+
 
     def process_weights_after_loading(self, act_dtype: torch.dtype):
 
@@ -1518,10 +1521,8 @@ class MLACommonImpl(MLACommonBaseImpl[M], Generic[M]):
     ):
         assert isinstance(prefill, FlashInferPrefillMetadata)
         assert prefill.prefill_main is not None
-<<<<<<< HEAD
 
-=======
->>>>>>> upstream/releases/v0.11.0
+
         ret = prefill.prefill_main.run(
             q=q,
             k=k,
@@ -1530,21 +1531,13 @@ class MLACommonImpl(MLACommonBaseImpl[M], Generic[M]):
         )
 
         if isinstance(ret, tuple):
-<<<<<<< HEAD
             return ret[0], ret[1].transpose(0, 1).contiguous()
         return ret
 
     def _run_prefill_new_tokens_cudnn(
         self, prefill: MLACommonPrefillMetadata, q, k, v, return_softmax_lse
     ):
-=======
-            # Convert from (q_len, num_heads) to (num_heads, q_len)
-            return ret[0], ret[1].transpose(0, 1).contiguous()
-        return ret
 
-    def _run_prefill_new_tokens_cudnn(self, prefill: MLACommonPrefillMetadata,
-                                      q, k, v, return_softmax_lse):
->>>>>>> upstream/releases/v0.11.0
         assert isinstance(prefill, CudnnPrefillMetadata)
         assert prefill.query_seq_lens is not None
         output, lse = cudnn_batch_prefill_with_kv_cache(
@@ -1588,10 +1581,8 @@ class MLACommonImpl(MLACommonBaseImpl[M], Generic[M]):
         self, prefill: MLACommonPrefillMetadata, chunk_idx: int, q, k, v
     ):
         assert isinstance(prefill, FlashInferPrefillMetadata)
-<<<<<<< HEAD
 
-=======
->>>>>>> upstream/releases/v0.11.0
+
         attn_out, lse = prefill.prefill_chunks[chunk_idx].run(
             q=q,
             k=k,
@@ -1629,7 +1620,6 @@ class MLACommonImpl(MLACommonBaseImpl[M], Generic[M]):
             is_cuda_graph_compatible=True,
         )
 
-<<<<<<< HEAD
     def _run_prefill_new_tokens_trtllm_ragged(
         self, prefill: MLACommonPrefillMetadata, q, k, v, return_softmax_lse
     ):
@@ -1705,8 +1695,7 @@ class MLACommonImpl(MLACommonBaseImpl[M], Generic[M]):
         # Convert from (q_len, num_heads) to (num_heads, q_len)
         return attn_out, lse.transpose(0, 1).contiguous()
 
-=======
->>>>>>> upstream/releases/v0.11.0
+
     def process_weights_after_loading(self, act_dtype: torch.dtype):
         def get_layer_weight(layer):
             WEIGHT_NAMES = ("weight", "qweight", "weight_packed")

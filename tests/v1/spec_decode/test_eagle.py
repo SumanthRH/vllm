@@ -372,17 +372,15 @@ def test_load_model(
 
     all_indx_layers: dict[str, mock.MagicMock] = {}
 
+    all_indx_layers: dict[str, mock.MagicMock] = {}
+
     # Make mock_get_layers return different values for each call
     mock_get_layers.side_effect = [
-<<<<<<< HEAD
         target_attn_layers,
         target_indx_layers,
         all_attn_layers,
         all_indx_layers,
-=======
-        target_attn_layers, target_indx_layers, all_attn_layers,
-        all_indx_layers
->>>>>>> upstream/releases/v0.11.0
+
     ]
 
     # Setup mock for pp group to return the appropriate value for world size
@@ -705,7 +703,7 @@ def test_propose_tree(spec_token_tree):
     proposer.runner.attn_groups[0][
         0
     ].get_metadata_builder.return_value = attn_metadata_builder
-=======
+
     proposer.runner.attn_groups[0][0].metadata_builders = [
         attn_metadata_builder
     ]

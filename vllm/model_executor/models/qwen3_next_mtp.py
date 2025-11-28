@@ -81,7 +81,7 @@ class Qwen3NextMultiTokenPredictor(nn.Module):
             )
             for idx in range(self.num_mtp_layers)
         )
-=======
+
                 prefix=f'{prefix}.layers.{idx}',
             ) for idx in range(self.num_mtp_layers))
 >>>>>>> upstream/releases/v0.11.0

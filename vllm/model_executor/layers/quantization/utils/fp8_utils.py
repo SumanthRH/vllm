@@ -1186,7 +1186,7 @@ def maybe_post_process_fp8_weight_block(layer: torch.nn.Module):
     should_use_deepgemm = should_use_deepgemm_for_fp8_linear(
 <<<<<<< HEAD
         layer.orig_dtype, layer.weight
-=======
+
         layer.orig_dtype, layer.weight)
     if is_deep_gemm_e8m0_used() and should_use_deepgemm:
         block_sz = tuple(layer.weight_block_size)

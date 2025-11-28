@@ -69,7 +69,6 @@ class AttentionSpec(KVCacheSpec):
 
     @property
     def page_size_bytes(self) -> int:
-<<<<<<< HEAD
         return (
             2
             * self.block_size
@@ -77,78 +76,7 @@ class AttentionSpec(KVCacheSpec):
             * self.head_size
             * get_dtype_size(self.dtype)
         )
-=======
-        return 2 * self.block_size * self.num_kv_heads * self.head_size \
-                * get_dtype_size(self.dtype)
->>>>>>> upstream/releases/v0.11.0
 
-
-@dataclass(frozen=True)
-class FullAttentionSpec(AttentionSpec):
-    sliding_window: int | None = None
-    attention_chunk_size: int | None = None
-    """
-    When hybrid allocator is disabled and the model contains both full 
-    attention layers and sliding window attention layers, sliding 
-    window attention are regarded as full attention in KV cache manager 
-    (blocks are allocated for all tokens), while computed as sliding window 
-    attention in model runner.
-    In this case, we use FullAttentionSpec and record the sliding window size.
-    Default to None for not using sliding window attention.
-    """
-
-    def max_memory_usage_bytes(self, vllm_config: VllmConfig) -> int:
-        max_model_len = vllm_config.model_config.max_model_len
-        dcp_world_size = vllm_config.parallel_config.decode_context_parallel_size
-        pcp_world_size = vllm_config.parallel_config.prefill_context_parallel_size
-        # Note(hc): each dcp rank only need save
-        # (max_model_len//dcp_world_size) tokens locally.
-        if dcp_world_size * pcp_world_size > 1:
-            max_model_len = cdiv(max_model_len, dcp_world_size * pcp_world_size)
-        return cdiv(max_model_len, self.block_size) * self.page_size_bytes
-
-    @classmethod
-    def merge_window_sizes(cls, window_sizes: set[int]) -> int | None:
-        if len(window_sizes) == 0:
-            return None
-        elif len(window_sizes) == 1:
-            return window_sizes.pop()
-        else:
-            raise ValueError(
-                "All attention layers in the same KV cache group must have the "
-                "same window size."
-            )
-
-    @classmethod
-    def merge(cls, specs: list[Self]) -> Self:
-        """
-        Merge a list of FullAttentionSpec objects into a single
-        FullAttentionSpec object.
-        """
-        assert all(isinstance(spec, FullAttentionSpec) for spec in specs), (
-            "All attention layers in the same KV cache group must be FullAttentionSpec."
-        )
-
-<<<<<<< HEAD
-        sliding_window = set(
-            spec.sliding_window for spec in specs if spec.sliding_window is not None
-        )
-        attention_chunk_size = set(
-            spec.attention_chunk_size
-            for spec in specs
-            if spec.attention_chunk_size is not None
-        )
-        assert not any(isinstance(spec, MLAAttentionSpec) for spec in specs), (
-            "MLAAttentionSpec should be merged in MLAAttentionSpec.merge"
-        )
-=======
-        sliding_window = set(spec.sliding_window for spec in specs
-                             if spec.sliding_window is not None)
-        attention_chunk_size = set(spec.attention_chunk_size for spec in specs
-                                   if spec.attention_chunk_size is not None)
-        assert not any(isinstance(spec, MLAAttentionSpec) for spec in specs), (
-            "MLAAttentionSpec should be merged in MLAAttentionSpec.merge")
->>>>>>> upstream/releases/v0.11.0
         merged_spec = cls(
             block_size=specs[0].block_size,
             num_kv_heads=specs[0].num_kv_heads,
@@ -175,11 +103,8 @@ class FullAttentionSpec(AttentionSpec):
 @dataclass(frozen=True)
 class MLAAttentionSpec(FullAttentionSpec):
     # TODO(Lucas/Chen): less hacky way to do this
-<<<<<<< HEAD
     cache_dtype_str: str | None = None
-=======
-    cache_dtype_str: Optional[str] = None
->>>>>>> upstream/releases/v0.11.0
+
 
     @property
     def page_size_bytes(self) -> int:
@@ -187,22 +112,17 @@ class MLAAttentionSpec(FullAttentionSpec):
             # See `vllm/v1/attention/backends/mla/flashmla_sparse.py`
             #  for details.
             return self.block_size * 656
-<<<<<<< HEAD
         return (
             self.block_size
             * self.num_kv_heads
             * self.head_size
             * get_dtype_size(self.dtype)
         )
-=======
-        return self.block_size * self.num_kv_heads * self.head_size \
-                * get_dtype_size(self.dtype)
->>>>>>> upstream/releases/v0.11.0
+
 
     @classmethod
     def merge(cls, specs: list[Self]) -> Self:
         assert all(isinstance(spec, MLAAttentionSpec) for spec in specs), (
-<<<<<<< HEAD
             "All attention layers in the same KV cache group must be MLAAttentionSpec."
         )
         cache_dtype_str_set = set(spec.cache_dtype_str for spec in specs)
@@ -210,14 +130,7 @@ class MLAAttentionSpec(FullAttentionSpec):
             "All attention layers in the same KV cache group must use the same "
             "quantization method."
         )
-=======
-            "All attention layers in the same KV cache group must be "
-            "MLAAttentionSpec.")
-        cache_dtype_str_set = set(spec.cache_dtype_str for spec in specs)
-        assert len(cache_dtype_str_set) == 1, (
-            "All attention layers in the same KV cache group must use the same "
-            "quantization method.")
->>>>>>> upstream/releases/v0.11.0
+
         return cls(
             block_size=specs[0].block_size,
             num_kv_heads=specs[0].num_kv_heads,
@@ -357,8 +270,7 @@ class UniformTypeKVCacheSpecs(KVCacheSpec):
             return all(
                 isinstance(spec, CrossAttentionSpec) for spec in kv_cache_specs.values()
             )
-=======
-                isinstance(spec, FullAttentionSpec)
+
                 for spec in kv_cache_specs.values())
         elif isinstance(one_spec, CrossAttentionSpec):
             return all(

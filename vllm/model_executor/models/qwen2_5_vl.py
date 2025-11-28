@@ -306,14 +306,10 @@ class Qwen2_5_VisionAttention(nn.Module):
         quant_config: QuantizationConfig | None = None,
         prefix: str = "",
         use_data_parallel: bool = False,
-<<<<<<< HEAD
         attn_backend: AttentionBackendEnum = AttentionBackendEnum.TORCH_SDPA,
         use_upstream_fa: bool = False,
         attn_backend_override: AttentionBackendEnum | None = None,
-=======
-        attn_backend: _Backend = _Backend.TORCH_SDPA,
-        use_upstream_fa: bool = False,
->>>>>>> upstream/releases/v0.11.0
+
     ) -> None:
         super().__init__()
         # Per attention head and per partition values.
@@ -341,7 +337,6 @@ class Qwen2_5_VisionAttention(nn.Module):
             disable_tp=use_data_parallel,
         )
 
-<<<<<<< HEAD
         self.proj = RowParallelLinear(
             input_size=projection_size,
             output_size=embed_dim,
@@ -368,14 +363,8 @@ class Qwen2_5_VisionAttention(nn.Module):
             self.use_upstream_fa = True
         if current_platform.is_xpu():
             self.use_upstream_fa = False
+
 =======
-        self.proj = RowParallelLinear(input_size=projection_size,
-                                      output_size=embed_dim,
-                                      quant_config=quant_config,
-                                      prefix=f"{prefix}.proj",
-                                      disable_tp=use_data_parallel)
-        self.attn_backend = attn_backend
-        self.use_upstream_fa = use_upstream_fa
 >>>>>>> upstream/releases/v0.11.0
         self.is_flash_attn_backend = self.attn_backend in {
             AttentionBackendEnum.FLASH_ATTN,
@@ -473,14 +462,10 @@ class Qwen2_5_VisionBlock(nn.Module):
         quant_config: QuantizationConfig | None = None,
         prefix: str = "",
         use_data_parallel: bool = False,
-<<<<<<< HEAD
         attn_backend: AttentionBackendEnum = AttentionBackendEnum.TORCH_SDPA,
         use_upstream_fa: bool = False,
         attn_backend_override: AttentionBackendEnum | None = None,
-=======
-        attn_backend: _Backend = _Backend.TORCH_SDPA,
-        use_upstream_fa: bool = False,
->>>>>>> upstream/releases/v0.11.0
+
     ) -> None:
         super().__init__()
         if norm_layer is None:
@@ -495,7 +480,6 @@ class Qwen2_5_VisionBlock(nn.Module):
             prefix=f"{prefix}.attn",
             use_data_parallel=use_data_parallel,
             attn_backend=attn_backend,
-<<<<<<< HEAD
             use_upstream_fa=use_upstream_fa,
             attn_backend_override=attn_backend_override,
         )
@@ -508,271 +492,7 @@ class Qwen2_5_VisionBlock(nn.Module):
             prefix=f"{prefix}.mlp",
             use_data_parallel=use_data_parallel,
         )
-=======
-            use_upstream_fa=use_upstream_fa)
-        self.mlp = Qwen2_5_VisionMLP(dim,
-                                     mlp_hidden_dim,
-                                     act_fn=act_fn,
-                                     bias=True,
-                                     quant_config=quant_config,
-                                     prefix=f"{prefix}.mlp",
-                                     use_data_parallel=use_data_parallel)
->>>>>>> upstream/releases/v0.11.0
 
-    def forward(
-        self,
-        x: torch.Tensor,
-        cu_seqlens: torch.Tensor,
-        rotary_pos_emb_cos: torch.Tensor,
-        rotary_pos_emb_sin: torch.Tensor,
-        max_seqlen: torch.Tensor,  # Only used for Flash Attention
-    ) -> torch.Tensor:
-        x_attn = self.attn(
-            self.norm1(x),
-            cu_seqlens=cu_seqlens,
-            rotary_pos_emb_cos=rotary_pos_emb_cos,
-            rotary_pos_emb_sin=rotary_pos_emb_sin,
-            max_seqlen=max_seqlen,
-        )
-        x_fused_norm, residual = self.norm2(x, residual=x_attn)
-        x = residual + self.mlp(x_fused_norm)
-        return x
-
-
-@support_torch_compile(
-    dynamic_arg_dims={
-        "x": 0,
-    },
-    enable_if=should_torch_compile_mm_vit,
-)
-class Qwen2_5_VisionPatchEmbed(nn.Module):
-    def __init__(
-        self,
-        patch_size: int = 14,
-        temporal_patch_size: int = 2,
-        in_channels: int = 3,
-        hidden_size: int = 1152,
-    ) -> None:
-        super().__init__()
-        self.patch_size = patch_size
-        self.temporal_patch_size = temporal_patch_size
-        self.hidden_size = hidden_size
-
-        kernel_size = (temporal_patch_size, patch_size, patch_size)
-        self.proj = Conv3dLayer(
-            in_channels,
-            hidden_size,
-            kernel_size=kernel_size,
-            stride=kernel_size,
-            bias=False,
-        )
-
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        L, C = x.shape
-        x = x.view(L, -1, self.temporal_patch_size, self.patch_size, self.patch_size)
-        x = self.proj(x).view(L, self.hidden_size)
-        return x
-
-
-@support_torch_compile(
-    dynamic_arg_dims={
-        "x": 0,
-    },
-    enable_if=should_torch_compile_mm_vit,
-)
-class Qwen2_5_VisionPatchMerger(nn.Module):
-    def __init__(
-        self,
-        d_model: int,
-        context_dim: int,
-        norm_layer: Callable[[int], nn.Module] | None = None,
-        spatial_merge_size: int = 2,
-        quant_config: QuantizationConfig | None = None,
-        prefix: str = "",
-        use_data_parallel: bool = False,
-    ) -> None:
-        super().__init__()
-        self.hidden_size = context_dim * (spatial_merge_size**2)
-        if norm_layer is None:
-            norm_layer = partial(nn.LayerNorm, eps=1e-6)
-        self.ln_q = norm_layer(context_dim)
-
-        self.mlp = nn.Sequential(
-            ColumnParallelLinear(
-                self.hidden_size,
-                self.hidden_size,
-                bias=True,
-                quant_config=quant_config,
-                prefix=f"{prefix}.mlp.0",
-                return_bias=False,
-                disable_tp=use_data_parallel,
-            ),
-            nn.GELU(),
-            RowParallelLinear(
-                self.hidden_size,
-                d_model,
-                bias=True,
-                quant_config=quant_config,
-                prefix=f"{prefix}.mlp.2",
-                return_bias=False,
-                disable_tp=use_data_parallel,
-            ),
-        )
-
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        x = self.ln_q(x)
-        x = x.view(-1, self.hidden_size)
-        out = self.mlp(x)
-        return out
-
-
-class Qwen2_5_VisionTransformer(nn.Module):
-    def __init__(
-        self,
-        vision_config: Qwen2_5_VLVisionConfig,
-        norm_eps: float = 1e-6,
-        quant_config: QuantizationConfig | None = None,
-        prefix: str = "",
-        use_data_parallel: bool = False,
-        attn_backend_override: AttentionBackendEnum | None = None,
-    ) -> None:
-        super().__init__()
-
-        patch_size = vision_config.patch_size
-        temporal_patch_size = vision_config.temporal_patch_size
-        in_channels = vision_config.in_channels
-        depth = vision_config.depth
-        self.hidden_size = vision_config.hidden_size
-        self.num_heads = vision_config.num_heads
-        self.use_data_parallel = use_data_parallel
-        self.out_hidden_size = vision_config.out_hidden_size
-
-        # args for get_window_index_thw
-        self.window_size = vision_config.window_size
-        self.patch_size = vision_config.patch_size
-        self.spatial_merge_size = vision_config.spatial_merge_size
-        self.fullatt_block_indexes = vision_config.fullatt_block_indexes
-        self.spatial_merge_unit = self.spatial_merge_size**2
-        # TODO[@lucaskabela]: Investigate fixing this usage
-        # see https://github.com/vllm-project/vllm/issues/27044
-        # DO NOT MOVE THIS IMPORT
-        from vllm.compilation.backends import set_model_tag
-
-        with set_model_tag("Qwen2_5_VisionPatchEmbed"):
-            self.patch_embed = Qwen2_5_VisionPatchEmbed(
-                patch_size=patch_size,
-                temporal_patch_size=temporal_patch_size,
-                in_channels=in_channels,
-                hidden_size=self.hidden_size,
-            )
-
-        norm_layer = partial(RMSNorm, eps=norm_eps)
-        head_dim = self.hidden_size // self.num_heads
-<<<<<<< HEAD
-        self.rotary_pos_emb = get_rope(
-            head_size=head_dim,
-            rotary_dim=head_dim // 2,
-            max_position=8192,
-            is_neox_style=True,
-        )
-
-        use_upstream_fa = False
-        self.attn_backend = get_vit_attn_backend(
-            head_size=head_dim,
-            dtype=torch.get_default_dtype(),
-            attn_backend_override=attn_backend_override,
-        )
-
-        self.attn_backend, self.flash_attn_varlen_func = (
-            maybe_get_vit_flash_attn_backend(
-                self.attn_backend,
-                use_upstream_fa,
-                attn_backend_override=attn_backend_override,
-            )
-        )
-
-        if self.attn_backend not in {
-            AttentionBackendEnum.FLASH_ATTN,
-            AttentionBackendEnum.TORCH_SDPA,
-            AttentionBackendEnum.ROCM_AITER_FA,
-        }:
-            raise RuntimeError(
-                f"Qwen2.5-VL does not support {self.attn_backend} backend now."
-            )
-
-        with set_model_tag("Qwen2_5_VisionBlock"):
-            self.blocks = nn.ModuleList(
-                [
-                    Qwen2_5_VisionBlock(
-                        dim=self.hidden_size,
-                        num_heads=self.num_heads,
-                        mlp_hidden_dim=vision_config.intermediate_size,
-                        act_fn=get_act_and_mul_fn(vision_config.hidden_act),
-                        norm_layer=norm_layer,
-                        quant_config=quant_config,
-                        prefix=f"{prefix}.blocks.{layer_idx}",
-                        use_data_parallel=use_data_parallel,
-                        attn_backend=self.attn_backend,
-                        use_upstream_fa=use_upstream_fa,
-                        attn_backend_override=attn_backend_override,
-                    )
-                    for layer_idx in range(depth)
-                ]
-            )
-
-        with set_model_tag("Qwen2_5_VisionPatchMerger"):
-            self.merger = Qwen2_5_VisionPatchMerger(
-                d_model=vision_config.out_hidden_size,
-                context_dim=self.hidden_size,
-                norm_layer=norm_layer,
-                spatial_merge_size=self.spatial_merge_size,
-                quant_config=quant_config,
-                prefix=f"{prefix}.merger",
-                use_data_parallel=use_data_parallel,
-            )
-=======
-        self.rotary_pos_emb = Qwen2_5_VisionRotaryEmbedding(head_dim // 2)
-
-        use_upstream_fa = False
-        self.attn_backend = get_vit_attn_backend(
-            head_size=head_dim, dtype=torch.get_default_dtype())
-        if self.attn_backend != _Backend.FLASH_ATTN and \
-            check_upstream_fa_availability(
-                torch.get_default_dtype()):
-            self.attn_backend = _Backend.FLASH_ATTN
-            use_upstream_fa = True
-
-        if self.attn_backend not in {
-                _Backend.FLASH_ATTN, _Backend.TORCH_SDPA, _Backend.XFORMERS,
-                _Backend.ROCM_AITER_FA
-        }:
-            raise RuntimeError(
-                f"Qwen2.5-VL does not support {self.attn_backend} backend now."
-            )
-
-        self.blocks = nn.ModuleList([
-            Qwen2_5_VisionBlock(
-                dim=self.hidden_size,
-                num_heads=self.num_heads,
-                mlp_hidden_dim=vision_config.intermediate_size,
-                act_fn=get_act_and_mul_fn(vision_config.hidden_act),
-                norm_layer=norm_layer,
-                quant_config=quant_config,
-                prefix=f"{prefix}.blocks.{layer_idx}",
-                use_data_parallel=use_data_parallel,
-                attn_backend=self.attn_backend,
-                use_upstream_fa=use_upstream_fa) for layer_idx in range(depth)
-        ])
-        self.merger = Qwen2_5_VisionPatchMerger(
-            d_model=vision_config.out_hidden_size,
-            context_dim=self.hidden_size,
-            norm_layer=norm_layer,
-            spatial_merge_size=self.spatial_merge_size,
-            quant_config=quant_config,
-            prefix=f"{prefix}.merger",
-            use_data_parallel=use_data_parallel,
-        )
->>>>>>> upstream/releases/v0.11.0
 
     @property
     def dtype(self) -> torch.dtype:

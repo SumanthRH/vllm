@@ -34,17 +34,12 @@ from torch import nn
 from vllm.attention import Attention
 from vllm.compilation.decorators import support_torch_compile
 from vllm.config import CacheConfig, VllmConfig
-<<<<<<< HEAD
 from vllm.distributed import (
     get_pp_group,
     get_tensor_model_parallel_world_size,
     tensor_model_parallel_all_gather,
 )
-=======
-from vllm.distributed import (get_pp_group,
-                              get_tensor_model_parallel_world_size,
-                              tensor_model_parallel_all_gather)
->>>>>>> upstream/releases/v0.11.0
+
 from vllm.model_executor.layers.fused_moe import FusedMoE
 from vllm.model_executor.layers.layernorm import RMSNorm
 from vllm.model_executor.layers.linear import (
@@ -60,12 +55,11 @@ from vllm.model_executor.layers.vocab_parallel_embedding import (
     VocabParallelEmbedding,
 )
 from vllm.model_executor.model_loader.weight_utils import (
-<<<<<<< HEAD
     default_weight_loader,
     maybe_remap_kv_scale_name,
 )
+
 =======
-    default_weight_loader, maybe_remap_kv_scale_name)
 >>>>>>> upstream/releases/v0.11.0
 from vllm.model_executor.models.utils import sequence_parallel_chunk
 from vllm.sequence import IntermediateTensors
@@ -82,7 +76,6 @@ class GraniteMoeMoE(nn.Module):
     across ranks.
     """
 
-<<<<<<< HEAD
     def __init__(
         self,
         num_experts: int,
@@ -95,18 +88,7 @@ class GraniteMoeMoE(nn.Module):
         is_sequence_parallel=False,
         prefix: str = "",
     ):
-=======
-    def __init__(self,
-                 num_experts: int,
-                 top_k: int,
-                 hidden_size: int,
-                 intermediate_size: int,
-                 params_dtype: Optional[torch.dtype] = None,
-                 quant_config: Optional[QuantizationConfig] = None,
-                 tp_size: Optional[int] = None,
-                 is_sequence_parallel=False,
-                 prefix: str = ""):
->>>>>>> upstream/releases/v0.11.0
+
         super().__init__()
         self.hidden_size = hidden_size
         self.is_sequence_parallel = is_sequence_parallel
@@ -121,7 +103,6 @@ class GraniteMoeMoE(nn.Module):
             prefix=f"{prefix}.gate",
         )
 
-<<<<<<< HEAD
         self.experts = FusedMoE(
             num_experts=num_experts,
             top_k=top_k,
@@ -135,18 +116,8 @@ class GraniteMoeMoE(nn.Module):
             prefix=f"{prefix}.experts",
             is_sequence_parallel=self.is_sequence_parallel,
         )
+
 =======
-        self.experts = FusedMoE(num_experts=num_experts,
-                                top_k=top_k,
-                                hidden_size=hidden_size,
-                                intermediate_size=intermediate_size,
-                                params_dtype=params_dtype,
-                                reduce_results=True,
-                                renormalize=True,
-                                quant_config=quant_config,
-                                tp_size=tp_size,
-                                prefix=f"{prefix}.experts",
-                                is_sequence_parallel=self.is_sequence_parallel)
 >>>>>>> upstream/releases/v0.11.0
 
     def forward(self, hidden_states: torch.Tensor) -> torch.Tensor:
@@ -163,12 +134,9 @@ class GraniteMoeMoE(nn.Module):
 
         if self.is_sequence_parallel:
             final_hidden_states = tensor_model_parallel_all_gather(
-<<<<<<< HEAD
                 final_hidden_states, 0
             )
-=======
-                final_hidden_states, 0)
->>>>>>> upstream/releases/v0.11.0
+
             num_tokens = orig_shape[0]
             final_hidden_states = final_hidden_states[:num_tokens]
 
@@ -294,7 +262,7 @@ class GraniteMoeDecoderLayer(nn.Module):
 <<<<<<< HEAD
             prefix=f"{prefix}.block_sparse_moe",
         )
-=======
+
             prefix=f"{prefix}.block_sparse_moe")
 >>>>>>> upstream/releases/v0.11.0
 
@@ -351,7 +319,7 @@ class GraniteMoeModel(nn.Module):
 <<<<<<< HEAD
             prefix=f"{prefix}.layers",
         )
-=======
+
             prefix=f"{prefix}.layers")
 >>>>>>> upstream/releases/v0.11.0
 

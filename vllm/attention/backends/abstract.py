@@ -77,7 +77,7 @@ class AttentionBackend(ABC):
         cache_dtype_str: str = "auto",
 <<<<<<< HEAD
     ) -> tuple[int, ...]:
-=======
+
     ) -> Tuple[int, ...]:
 >>>>>>> upstream/releases/v0.11.0
         raise NotImplementedError

@@ -52,12 +52,10 @@ class HTTPConnection:
         url: str,
         *,
         stream: bool = False,
-<<<<<<< HEAD
         timeout: float | None = None,
         extra_headers: Mapping[str, str] | None = None,
+
 =======
-        timeout: Optional[float] = None,
-        extra_headers: Optional[Mapping[str, str]] = None,
 >>>>>>> upstream/releases/v0.11.0
         allow_redirects: bool = True,
     ):
@@ -66,7 +64,6 @@ class HTTPConnection:
         client = self.get_sync_client()
         extra_headers = extra_headers or {}
 
-<<<<<<< HEAD
         return client.get(
             url,
             headers=self._headers(**extra_headers),
@@ -74,24 +71,18 @@ class HTTPConnection:
             timeout=timeout,
             allow_redirects=allow_redirects,
         )
+
 =======
-        return client.get(url,
-                          headers=self._headers(**extra_headers),
-                          stream=stream,
-                          timeout=timeout,
-                          allow_redirects=allow_redirects)
 >>>>>>> upstream/releases/v0.11.0
 
     async def get_async_response(
         self,
         url: str,
         *,
-<<<<<<< HEAD
         timeout: float | None = None,
         extra_headers: Mapping[str, str] | None = None,
+
 =======
-        timeout: Optional[float] = None,
-        extra_headers: Optional[Mapping[str, str]] = None,
 >>>>>>> upstream/releases/v0.11.0
         allow_redirects: bool = True,
     ):
@@ -100,7 +91,6 @@ class HTTPConnection:
         client = await self.get_async_client()
         extra_headers = extra_headers or {}
 
-<<<<<<< HEAD
         return client.get(
             url,
             headers=self._headers(**extra_headers),
@@ -114,20 +104,8 @@ class HTTPConnection:
         with self.get_response(
             url, timeout=timeout, allow_redirects=allow_redirects
         ) as r:
-=======
-        return client.get(url,
-                          headers=self._headers(**extra_headers),
-                          timeout=timeout,
-                          allow_redirects=allow_redirects)
 
-    def get_bytes(self,
-                  url: str,
-                  *,
-                  timeout: Optional[float] = None,
-                  allow_redirects: bool = True) -> bytes:
-        with self.get_response(url,
-                               timeout=timeout,
-                               allow_redirects=allow_redirects) as r:
+=======
 >>>>>>> upstream/releases/v0.11.0
             r.raise_for_status()
 
@@ -137,20 +115,13 @@ class HTTPConnection:
         self,
         url: str,
         *,
-<<<<<<< HEAD
         timeout: float | None = None,
         allow_redirects: bool = True,
     ) -> bytes:
         async with await self.get_async_response(
             url, timeout=timeout, allow_redirects=allow_redirects
         ) as r:
-=======
-        timeout: Optional[float] = None,
-        allow_redirects: bool = True,
-    ) -> bytes:
-        async with await self.get_async_response(
-                url, timeout=timeout, allow_redirects=allow_redirects) as r:
->>>>>>> upstream/releases/v0.11.0
+
             r.raise_for_status()
 
             return await r.read()

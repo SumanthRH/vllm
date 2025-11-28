@@ -35,7 +35,6 @@ class NaiveAll2AllManager(All2AllManagerBase):
     def __init__(self, cpu_group):
         super().__init__(cpu_group)
 
-<<<<<<< HEAD
     def naive_multicast(
         self,
         x: torch.Tensor,
@@ -49,19 +48,7 @@ class NaiveAll2AllManager(All2AllManagerBase):
 
         rank = self.rank if is_sequence_parallel else self.dp_rank
         world_size = self.world_size if is_sequence_parallel else self.dp_world_size
-=======
-    def naive_multicast(self, x: torch.Tensor,
-                        cu_tokens_across_sp_cpu: torch.Tensor,
-                        is_sequence_parallel: bool) -> torch.Tensor:
-        assert (len(x.shape) == 2)
-        buffer = torch.empty((cu_tokens_across_sp_cpu[-1], x.size(1)),
-                             device=x.device,
-                             dtype=x.dtype)
 
-        rank = self.rank if is_sequence_parallel else self.dp_rank
-        world_size = (self.world_size
-                      if is_sequence_parallel else self.dp_world_size)
->>>>>>> upstream/releases/v0.11.0
 
         start = 0 if rank == 0 else cu_tokens_across_sp_cpu[rank - 1]
         end = cu_tokens_across_sp_cpu[rank]
@@ -77,7 +64,6 @@ class NaiveAll2AllManager(All2AllManagerBase):
         self,
         hidden_states: torch.Tensor,
         router_logits: torch.Tensor,
-<<<<<<< HEAD
         is_sequence_parallel: bool = False,
     ) -> tuple[torch.Tensor, torch.Tensor]:
         sp_size = self.tp_group.world_size if is_sequence_parallel else 1
@@ -100,29 +86,7 @@ class NaiveAll2AllManager(All2AllManagerBase):
 
         dp_metadata = get_forward_context().dp_metadata
         assert dp_metadata is not None
-=======
-        is_sequence_parallel: bool = False
-    ) -> tuple[torch.Tensor, torch.Tensor]:
-        sp_size = self.tp_group.world_size if is_sequence_parallel else 1
-        dp_metadata = get_forward_context().dp_metadata
-        cu_tokens_across_sp_cpu = dp_metadata.cu_tokens_across_sp(sp_size)
 
-        hidden_states = self.naive_multicast(hidden_states,
-                                             cu_tokens_across_sp_cpu,
-                                             is_sequence_parallel)
-        router_logits = self.naive_multicast(router_logits,
-                                             cu_tokens_across_sp_cpu,
-                                             is_sequence_parallel)
-        return hidden_states, router_logits
-
-    def combine(self,
-                hidden_states: torch.Tensor,
-                is_sequence_parallel: bool = False) -> torch.Tensor:
-
-        ep_rank = self.rank if is_sequence_parallel else self.dp_rank
-
-        dp_metadata = get_forward_context().dp_metadata
->>>>>>> upstream/releases/v0.11.0
         sp_size = self.tp_group.world_size if is_sequence_parallel else 1
         cu_tokens_across_sp_cpu = dp_metadata.cu_tokens_across_sp(sp_size)
 
@@ -150,24 +114,17 @@ class AgRsAll2AllManager(All2AllManagerBase):
         self,
         hidden_states: torch.Tensor,
         router_logits: torch.Tensor,
-<<<<<<< HEAD
         is_sequence_parallel: bool = False,
-=======
-        is_sequence_parallel: bool = False
->>>>>>> upstream/releases/v0.11.0
+
     ) -> tuple[torch.Tensor, torch.Tensor]:
         """
         Gather hidden_states and router_logits from all dp ranks.
         """
-<<<<<<< HEAD
         dp_metadata = get_forward_context().dp_metadata
         assert dp_metadata is not None
         sizes = dp_metadata.get_chunk_sizes_across_dp_rank()
         assert sizes is not None
-=======
-        sizes = get_forward_context(
-        ).dp_metadata.get_chunk_sizes_across_dp_rank()
->>>>>>> upstream/releases/v0.11.0
+
 
         dist_group = get_ep_group() if is_sequence_parallel else get_dp_group()
         assert sizes[dist_group.rank_in_group] == hidden_states.shape[0]
@@ -178,7 +135,6 @@ class AgRsAll2AllManager(All2AllManagerBase):
         )
         return hidden_states, router_logits
 
-<<<<<<< HEAD
     def combine(
         self, hidden_states: torch.Tensor, is_sequence_parallel: bool = False
     ) -> torch.Tensor:
@@ -192,21 +148,7 @@ class AgRsAll2AllManager(All2AllManagerBase):
 
         dist_group = get_ep_group() if is_sequence_parallel else get_dp_group()
         hidden_states = dist_group.reduce_scatterv(hidden_states, dim=0, sizes=sizes)
-=======
-    def combine(self,
-                hidden_states: torch.Tensor,
-                is_sequence_parallel: bool = False) -> torch.Tensor:
-        """
-        Reduce-scatter hidden_states across all dp ranks.
-        """
-        sizes = get_forward_context(
-        ).dp_metadata.get_chunk_sizes_across_dp_rank()
 
-        dist_group = get_ep_group() if is_sequence_parallel else get_dp_group()
-        hidden_states = dist_group.reduce_scatterv(hidden_states,
-                                                   dim=0,
-                                                   sizes=sizes)
->>>>>>> upstream/releases/v0.11.0
         return hidden_states
 
     def destroy(self):
@@ -257,19 +199,16 @@ class PPLXAll2AllManager(All2AllManagerBase):
     def get_handle(self, kwargs):
         import pplx_kernels as pplx  # type: ignore[import-not-found]
 
-<<<<<<< HEAD
         return self.handle_cache.get_or_create(
             kwargs,
             pplx.AllToAll.internode if self.internode else pplx.AllToAll.intranode,
         )
 
-=======
->>>>>>> upstream/releases/v0.11.0
+
     def dispatch(
         self,
         hidden_states: torch.Tensor,
         router_logits: torch.Tensor,
-<<<<<<< HEAD
         is_sequence_parallel: bool = False,
     ) -> tuple[torch.Tensor, torch.Tensor]:
         raise NotImplementedError
@@ -277,15 +216,7 @@ class PPLXAll2AllManager(All2AllManagerBase):
     def combine(
         self, hidden_states: torch.Tensor, is_sequence_parallel: bool = False
     ) -> torch.Tensor:
-=======
-        is_sequence_parallel: bool = False
-    ) -> tuple[torch.Tensor, torch.Tensor]:
-        raise NotImplementedError
 
-    def combine(self,
-                hidden_states: torch.Tensor,
-                is_sequence_parallel: bool = False) -> torch.Tensor:
->>>>>>> upstream/releases/v0.11.0
         raise NotImplementedError
 
     def destroy(self):
@@ -326,7 +257,6 @@ class DeepEPAll2AllManagerBase(All2AllManagerBase):
         self,
         hidden_states: torch.Tensor,
         router_logits: torch.Tensor,
-<<<<<<< HEAD
         is_sequence_parallel: bool = False,
     ) -> tuple[torch.Tensor, torch.Tensor]:
         raise NotImplementedError
@@ -334,15 +264,7 @@ class DeepEPAll2AllManagerBase(All2AllManagerBase):
     def combine(
         self, hidden_states: torch.Tensor, is_sequence_parallel: bool = False
     ) -> torch.Tensor:
-=======
-        is_sequence_parallel: bool = False
-    ) -> tuple[torch.Tensor, torch.Tensor]:
-        raise NotImplementedError
 
-    def combine(self,
-                hidden_states: torch.Tensor,
-                is_sequence_parallel: bool = False) -> torch.Tensor:
->>>>>>> upstream/releases/v0.11.0
         raise NotImplementedError
 
     def destroy(self):

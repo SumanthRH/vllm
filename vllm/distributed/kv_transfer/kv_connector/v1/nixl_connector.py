@@ -128,10 +128,8 @@ class NixlConnectorMetadata(KVConnectorMetadata):
         self.reqs_to_save: dict[ReqId, ReqMeta] = {}
         self.reqs_to_send: dict[ReqId, float] = {}
         self.reqs_in_batch: set[ReqId] = set()
-<<<<<<< HEAD
         self.reqs_not_processed: set[ReqId] = set()
-=======
->>>>>>> upstream/releases/v0.11.0
+
 
     def add_new_req(
         self,
@@ -378,7 +376,6 @@ class NixlConnectorScheduler:
         # Reqs to send and their expiration time
         self._reqs_need_send: dict[ReqId, float] = {}
         self._reqs_in_batch: set[ReqId] = set()
-<<<<<<< HEAD
         # Reqs to remove from processed set because they're not to send after
         # remote prefill or aborted.
         self._reqs_not_processed: set[ReqId] = set()
@@ -465,8 +462,7 @@ class NixlConnectorScheduler:
                 if msg != GET_META_MSG:
                     logger.warning("Connection listener got unexpected message %s", msg)
                 sock.send_multipart((identity, b"", encoded_data[target_tp_rank]))
-=======
->>>>>>> upstream/releases/v0.11.0
+
 
     def get_num_new_matched_tokens(
         self, request: "Request", num_computed_tokens: int
@@ -593,19 +589,15 @@ class NixlConnectorScheduler:
 
         meta.reqs_to_send = self._reqs_need_send
         meta.reqs_in_batch = self._reqs_in_batch
-<<<<<<< HEAD
         meta.reqs_not_processed = self._reqs_not_processed
-=======
->>>>>>> upstream/releases/v0.11.0
+
 
         # Clear the list once workers start the transfers
         self._reqs_need_recv.clear()
         self._reqs_need_save.clear()
         self._reqs_in_batch = set()
-<<<<<<< HEAD
         self._reqs_not_processed = set()
-=======
->>>>>>> upstream/releases/v0.11.0
+
         self._reqs_need_send = {}
 
         return meta
@@ -824,7 +816,6 @@ class NixlConnectorWorker:
 
         # Agent.
         non_ucx_backends = [b for b in self.nixl_backends if b != "UCX"]
-<<<<<<< HEAD
         # Configure NIXL num_threads to avoid UAR exhaustion on Mellanox NICs.
         # Each UCX thread allocates UARs (doorbell pages) via DevX, and
         # excessive NIXL UAR usage can exhaust NIC UAR space. This can cause
@@ -843,13 +834,7 @@ class NixlConnectorWorker:
                 if len(non_ucx_backends) > 0
                 else nixl_agent_config(num_threads=num_threads, capture_telemetry=True)
             )
-=======
-        if nixl_agent_config is None:
-            config = None
-        else:
-            config = nixl_agent_config(backends=self.nixl_backends) if len(
-                non_ucx_backends) > 0 else nixl_agent_config(num_threads=8)
->>>>>>> upstream/releases/v0.11.0
+
 
         self.nixl_wrapper = NixlWrapper(str(uuid.uuid4()), config)
         # Map of engine_id -> {rank0: agent_name0, rank1: agent_name1..}.
@@ -1190,7 +1175,6 @@ class NixlConnectorWorker:
         # to better exploit the memory layout (ie num_blocks is the first dim).
         split_k_and_v = self.kv_topo.split_k_and_v
         tensor_size_bytes = None
-<<<<<<< HEAD
 
         # TODO (NickLucche): Get kernel_block_size in a cleaner way
         # NHD default "view" for non-MLA cache
@@ -1203,11 +1187,7 @@ class NixlConnectorWorker:
         self.block_len_per_layer = list[int]()
         self.slot_size_per_layer = list[int]()  # HD bytes in kv terms
         self.device_id = self.tp_rank
-=======
-        # Enable different block lengths for different layers when MLA is used.
-        self.block_len_per_layer = list[int]()
-        self.slot_size_per_layer = list[int]()  # HD bytes in kv terms
->>>>>>> upstream/releases/v0.11.0
+
         for layer_name, cache_or_caches in xfer_buffers.items():
             cache_list = cache_or_caches if split_k_and_v else [cache_or_caches]
 
@@ -1240,7 +1220,6 @@ class NixlConnectorWorker:
                     tensor_size_bytes = curr_tensor_size_bytes
                     self.num_blocks = cache.shape[0]
 
-<<<<<<< HEAD
                 assert cache.shape[0] == self.num_blocks, (
                     "All kv cache tensors must have the same number of blocks"
                 )
@@ -1268,25 +1247,7 @@ class NixlConnectorWorker:
         logger.debug(
             "Different block lengths collected: %s", set(self.block_len_per_layer)
         )
-=======
-                assert cache.shape[0] == self.num_blocks, \
-                    "All kv cache tensors must have the same number of blocks"
 
-                self.block_len_per_layer.append(curr_tensor_size_bytes //
-                                                self.num_blocks)
-                self.slot_size_per_layer.append(self.block_len_per_layer[-1] //
-                                                self.block_size)
-
-                if not self.use_mla:
-                    # Different kv cache shape is not supported by HeteroTP
-                    assert tensor_size_bytes == curr_tensor_size_bytes, \
-                        "All kv cache tensors must have the same size"
-                caches_data.append(
-                    (base_addr, curr_tensor_size_bytes, self.tp_rank, ""))
-
-        logger.debug("Different block lengths collected: %s",
-                     set(self.block_len_per_layer))
->>>>>>> upstream/releases/v0.11.0
         assert len(self.block_len_per_layer) == len(seen_base_addresses)
         assert self.num_blocks != 0
 
@@ -1302,11 +1263,8 @@ class NixlConnectorWorker:
 
         self.device_kv_caches = kv_caches
         self.dst_num_blocks[self.engine_id] = self.num_blocks
-<<<<<<< HEAD
         if self.kv_topo.is_kv_layout_blocks_first:
-=======
-        if self._use_flashinfer:
->>>>>>> upstream/releases/v0.11.0
+
             for i in range(len(self.slot_size_per_layer)):
                 assert self.slot_size_per_layer[i] % 2 == 0
                 self.slot_size_per_layer[i] //= 2
@@ -1320,45 +1278,11 @@ class NixlConnectorWorker:
             self.num_regions *= 2
 
         # Register local/src descr for NIXL xfer.
-<<<<<<< HEAD
         self.seen_base_addresses = seen_base_addresses
         self.src_xfer_side_handle = self.register_local_xfer_handler(self.block_size)
 
         self.src_xfer_side_handles[self.block_size] = self.src_xfer_side_handle
-=======
-        blocks_data = []
-        for i, base_addr in enumerate(seen_base_addresses):
-            kv_block_len = self.get_backend_aware_kv_block_len(layer_idx=i)
-            # NOTE With heter-TP, more blocks are prepared than what are
-            # needed as self.num_blocks >= nixl_agent_meta.num_blocks. We
-            # could create fewer, but then _get_block_descs_ids needs to
-            # select agent_meta.num_blocks instead of self.num_blocks for
-            # local descr, and that makes handling regular flow less clean.
-            for block_id in range(self.num_blocks):
-                block_offset = block_id * self.block_len_per_layer[i]
-                addr = base_addr + block_offset
-                # (addr, len, device id)
-                blocks_data.append((addr, kv_block_len, self.tp_rank))
 
-            if self._use_flashinfer:
-                # Separate and interleave K/V regions to maintain the same
-                # descs ordering. This is needed for selecting contiguous heads
-                # when split across TP ranks.
-                for block_id in range(self.num_blocks):
-                    block_offset = block_id * self.block_len_per_layer[i]
-                    addr = base_addr + block_offset
-                    # Register addresses for V cache (K registered first).
-                    v_addr = addr + kv_block_len
-                    blocks_data.append((v_addr, kv_block_len, self.tp_rank))
-        logger.debug("Created %s blocks for src engine %s and rank %s",
-                     len(blocks_data), self.engine_id, self.tp_rank)
-
-        descs = self.nixl_wrapper.get_xfer_descs(blocks_data,
-                                                 self.nixl_memory_type)
-        # NIXL_INIT_AGENT to be used for preparations of local descs.
-        self.src_xfer_side_handle = self.nixl_wrapper.prep_xfer_dlist(
-            "NIXL_INIT_AGENT", descs)
->>>>>>> upstream/releases/v0.11.0
 
         # TODO(mgoin): Hybrid memory allocator is currently disabled for
         # models with local attention (Llama 4). Can remove this once enabled.
@@ -1537,58 +1461,8 @@ class NixlConnectorWorker:
 
         # Number of D TP workers reading from a single P TP worker. This is
         # 1 when P and D `--tensor-parallel-size` match.
-<<<<<<< HEAD
         tp_ratio = self.kv_topo.tp_ratio_from_engine_id(engine_id)
-=======
-        tp_ratio = divide(self._tp_size[self.engine_id],
-                          self._tp_size[engine_id])
-        assert tp_ratio > 0, "Decode TP cannot be smaller than prefill TP"
-        assert not self._use_pallas or tp_ratio == 1, \
-               "TPU (pallas_v1) DOES NOT support heterogeneous TP yet."
 
-        # Handle tp_size>num_kv_heads: replicate KV cache.
-        total_num_kv_heads = self.model_config.get_total_num_kv_heads()
-        is_kv_replicated = self._tp_size[engine_id] // total_num_kv_heads >= 1
-
-        remote_block_len = nixl_agent_meta.block_lens[0]
-        if self.use_mla or is_kv_replicated:
-            # With replicated KV cache, only the number of blocks can differ.
-            assert self.block_len_per_layer == nixl_agent_meta.block_lens, \
-                "KV cache sizes must match between P and D when replicated"
-            remote_block_size = remote_block_len // (
-                self.slot_size_per_layer[0])
-        else:
-            # When MLA is not used, this is a list of the same block length
-            for block_len in nixl_agent_meta.block_lens:
-                assert block_len == remote_block_len, \
-                    "All remote layers must have the same block size"
-            remote_block_size = remote_block_len // (
-                self.slot_size_per_layer[0] * tp_ratio)
-            if self._use_flashinfer:
-                # With flashinfer, KV are sent in the same message.
-                remote_block_size //= 2
-            if tp_ratio > 1:
-                # Heterogeneous TP expects same kv_cache_layout.
-                assert nixl_agent_meta.kv_cache_layout == self.kv_cache_layout
-                if self.device_type == "xpu":
-                    raise ValueError(
-                        "Heterogeneous TP is not supported on XPU")
-
-            assert remote_block_len == self.block_len_per_layer[0] * tp_ratio, (
-                "Remote P worker KV layer cache must be of shape [2, N, "
-                "local_kv_heads*tp_ratio, block_size, head_dim] and same dtype."
-            )
-
-        assert self.block_size == remote_block_size, (
-            "Remote P worker with different page/block size is not supported "
-            f"{self.block_size=}, {remote_block_size=}")
-
-        # Create dst descs and xfer side handles. TP workers have same #blocks.
-        if engine_id in self.dst_num_blocks:
-            assert self.dst_num_blocks[engine_id] == nixl_agent_meta.num_blocks
-        else:
-            self.dst_num_blocks[engine_id] = nixl_agent_meta.num_blocks
->>>>>>> upstream/releases/v0.11.0
 
         ### Register remote agent memory regions
         blocks_data = []
@@ -1596,7 +1470,6 @@ class NixlConnectorWorker:
         # rank. With heterogeneous TP, prepare the descriptors by splitting the
         # P KV cache along kv_head dim, of D worker's kv_head size (D>P).
         # Eg. PTP1 DTP2 => P0 KV:[block0-KV_0 | block0-KV_1..].
-<<<<<<< HEAD
 
         # Register all remote blocks, but only the corresponding kv heads.
         for i, base_addr in enumerate(nixl_agent_meta.kv_caches_base_addr):
@@ -1610,18 +1483,7 @@ class NixlConnectorWorker:
                 if not replicates_kv_cache
                 else 0
             )
-=======
-        self.kv_caches_base_addr[
-            engine_id] = nixl_agent_meta.kv_caches_base_addr
 
-        assert len(nixl_agent_meta.kv_caches_base_addr) == len(
-            self.block_len_per_layer)
-        # Register all remote blocks, but only the corresponding kv heads.
-        for i, base_addr in enumerate(nixl_agent_meta.kv_caches_base_addr):
-            kv_block_len = self.get_backend_aware_kv_block_len(layer_idx=i)
-            rank_offset = self.tp_rank % tp_ratio * kv_block_len \
-                if not (self.use_mla or is_kv_replicated) else 0
->>>>>>> upstream/releases/v0.11.0
             for block_id in range(nixl_agent_meta.num_blocks):
                 block_offset = block_id * nixl_agent_meta.block_lens[i]
                 # For each block, grab the heads chunk belonging to rank_i
@@ -1637,309 +1499,10 @@ class NixlConnectorWorker:
                     block_offset = block_id * nixl_agent_meta.block_lens[i]
                     addr = base_addr + block_offset + rank_offset
                     v_addr = addr + nixl_agent_meta.block_lens[i] // 2
-<<<<<<< HEAD
                     blocks_data.append(
                         (v_addr, kv_block_len, nixl_agent_meta.device_id)
                     )
-=======
-                    blocks_data.append((v_addr, kv_block_len, remote_tp_rank))
->>>>>>> upstream/releases/v0.11.0
 
-        logger.debug(
-            "Created %s blocks for dst engine %s with remote rank %s and local rank %s",
-            len(blocks_data),
-            engine_id,
-            remote_tp_rank,
-            self.tp_rank,
-        )
-
-        # Register with NIXL.
-        descs = self.nixl_wrapper.get_xfer_descs(blocks_data, self.nixl_memory_type)
-        self.dst_xfer_side_handles[engine_id] = self.nixl_wrapper.prep_xfer_dlist(
-            remote_agent_name, descs
-        )
-
-        if block_size_ratio > 1:
-            # when prefill with smaller block_size, we need to init a
-            # new handler with same block_len to match
-            self.src_xfer_side_handles[nixl_agent_meta.block_size] = (
-                self.register_local_xfer_handler(nixl_agent_meta.block_size)
-            )
-
-        return remote_agent_name
-
-    def _validate_remote_agent_handshake(
-        self, nixl_agent_meta: NixlAgentMetadata, remote_tp_size: int
-    ):
-        """
-        Validate the remote agent handshake metadata ensuring the
-        invariants hold true.
-        """
-        remote_engine_id = nixl_agent_meta.engine_id
-
-        assert self._tp_size[remote_engine_id] == remote_tp_size
-        # TODO We may eventually want to skip enforcing the same attn backend.
-        assert nixl_agent_meta.attn_backend_name == self.backend_name
-
-        tp_ratio = self.kv_topo.tp_ratio_from_engine_id(remote_engine_id)
-        block_size_ratio = self.kv_topo.block_size_ratio_from_engine_id(
-            remote_engine_id
-        )
-        assert tp_ratio > 0, "Decode TP cannot be smaller than prefill TP"
-        assert not self._use_pallas or tp_ratio == 1, (
-            "TPU (pallas_v1) DOES NOT support heterogeneous TP yet."
-        )
-        kv_cache_layout = (
-            self.kv_cache_layout
-            if not self.use_host_buffer
-            else self.host_buffer_kv_cache_layout
-        )
-        if not self.use_mla and nixl_agent_meta.kv_cache_layout != kv_cache_layout:
-            if (
-                self.kv_transfer_config.enable_permute_local_kv
-                and nixl_agent_meta.kv_cache_layout == "HND"
-            ):
-                logger.info(
-                    "Remote is HND and local is NHD, enabled additional permute "
-                    "on local device KV."
-                )
-                self.enable_permute_local_kv = True
-            else:
-                raise RuntimeError(
-                    "Heterogeneous TP expects same kv_cache_layout. "
-                    "Or enable experimental feature to use HND to NHD support by "
-                    "setting 'enable_permute_local_kv'=True in --kv-transfer-config."
-                )
-
-        # Block len can only vary across layers when using MLA.
-        remote_block_len = nixl_agent_meta.block_lens[0]
-        if self.use_mla or self.kv_topo.is_kv_replicated(remote_engine_id):
-            # With replicated KV cache, only the number of blocks can differ.
-            for i in range(len(self.block_len_per_layer)):
-                assert (
-                    self.block_len_per_layer[i] // block_size_ratio
-                    == nixl_agent_meta.block_lens[i]
-                ), "KV cache sizes must match between P and D when replicated"
-        else:
-            # When MLA is not used, this is a list of the same block length
-            for block_len in nixl_agent_meta.block_lens:
-                assert block_len == remote_block_len, (
-                    "All remote layers must have the same block size"
-                )
-
-            assert (
-                remote_block_len
-                == (self.block_len_per_layer[0] * tp_ratio) // block_size_ratio
-            ), (
-                "Remote P worker KV layer cache must be of shape [2, N, "
-                "local_kv_heads*tp_ratio, block_size, head_dim] and same dtype."
-            )
-
-        # TP workers have same #blocks.
-        assert self.dst_num_blocks[remote_engine_id] == nixl_agent_meta.num_blocks
-
-        assert len(nixl_agent_meta.kv_caches_base_addr) == len(self.block_len_per_layer)
-
-    def sync_recved_kv_to_device(self, req_id: str, meta: ReqMeta):
-        """copy recved kv from host buffer to device."""
-        assert self.use_host_buffer
-        assert self.copy_blocks is not None
-
-        local_block_ids = meta.local_physical_block_ids
-        self.copy_blocks(
-            self.host_xfer_buffers,
-            self.device_kv_caches,
-            local_block_ids,
-            local_block_ids,
-            "h2d",
-        )
-        if logger.isEnabledFor(logging.DEBUG):
-            logger.debug(
-                "synced recved kv of request[%s] to device kv buffer,"
-                "local_block_ids: %s. ",
-                req_id,
-                ",".join(map(str, local_block_ids)),
-            )
-
-    def save_kv_to_host(self, metadata: NixlConnectorMetadata):
-        """copy kv from device to host buffer."""
-        assert self.use_host_buffer
-        assert self.copy_blocks is not None
-
-        for req_id, meta in metadata.reqs_to_save.items():
-            meta.local_physical_block_ids = self._logical_to_kernel_block_ids(
-                meta.local_block_ids
-            )
-            if logger.isEnabledFor(logging.DEBUG):
-                logger.debug(
-                    "save_load_kv for request[%s] to host xfer buffer."
-                    "local_block_ids: %s. ",
-                    req_id,
-                    ",".join(map(str, meta.local_physical_block_ids)),
-                )
-            # blocking
-            self.copy_blocks(
-                self.device_kv_caches,
-                self.host_xfer_buffers,
-                meta.local_physical_block_ids,
-                meta.local_physical_block_ids,
-                "d2h",
-            )
-
-    def permute_device_kv(self, block_ids: list[int]):
-        """Transforms the layout of received KV cache blocks to the local format.
-
-        This method corrects layout mismatches from direct memory copies by
-        permuting the tensor dimensions.
-
-        - **Source Layout:** `[num_blocks, n_kv_head, block_size, head_dim]`
-        - **Target Layout:** `[num_blocks, block_size, n_kv_head, head_dim]`
-
-        Args:
-            block_ids: A list of block IDs to update and permute.
-
-        Implementation:
-        - x = blocks_to_update.reshape(src_shape) # view local kv with sender layout
-        - permuted_blocks = x.permute(*inv_order) # transpose n_kv_heads, block_size
-        - cache.index_copy_(0, indices, permuted_blocks) # copy permuted kv back
-
-        """
-        split_k_and_v = self.kv_topo.split_k_and_v
-        inv_order = [0, 2, 1, 3]
-        sample_cache = list(self.device_kv_caches.values())[0][0]
-        target_shape = list(sample_cache.shape)
-        target_shape[0] = -1
-        src_shape = tuple(target_shape[i] for i in inv_order)
-        indices = torch.tensor(block_ids, device=sample_cache.device)
-
-        for _, cache_or_caches in self.device_kv_caches.items():
-            cache_list = cache_or_caches if split_k_and_v else [cache_or_caches]
-            for cache in cache_list:
-                blocks_to_update = cache.index_select(0, indices)
-                permuted_blocks = blocks_to_update.reshape(src_shape).permute(
-                    *inv_order
-                )
-                cache.index_copy_(0, indices, permuted_blocks)
-
-    def blocksize_post_process(self, block_ids_per_ratio: dict[float, list[list[int]]]):
-        def _process_local_gt_remote(blocks_to_update, block_size_ratio):
-            n_kv_heads, block_size, head_size = blocks_to_update.shape[1:]
-            remote_block_size = block_size // block_size_ratio
-            n_blocks = block_size_ratio
-            # actual permute is to convert
-            # for local blocksize > remote blocksize
-            # ex: local blocksize = 16 tokens, remote blocksize = 4 tokens
-            # local block[0] = remote block[0, 1, 2, 3]
-            # remote is |h0-b0|h1-b0|h2-b0|h3-b0|h0-b1|h1-b1|h2-b1|h3-b1|...
-            # local is  |h0-b0..................|h1-b0..................|...
-            # permute is to:
-            # 1. view => view remote as n_blocks * remote_shape(H,remoteN,D)
-            # 2. permute => (H, nblocks, remoteN, D)
-            # 3. flatten => (H, localN, D)
-            permuted_blocks = (
-                blocks_to_update.reshape(
-                    -1, n_blocks, n_kv_heads, remote_block_size, head_size
-                )
-                .permute(0, 2, 1, 3, 4)
-                .flatten(2, 3)
-            )
-            return permuted_blocks
-
-        if len(self.device_kv_caches) == 0:
-            return
-        split_k_and_v = not (
-            self.use_mla or self._use_pallas or self.kv_topo.is_kv_layout_blocks_first
-        )
-        sample_cache = list(self.device_kv_caches.values())[0][0]
-        for block_size_ratio, block_ids_list in block_ids_per_ratio.items():
-            assert block_size_ratio > 1, "Only nP < nD supported currently."
-            block_ids_list = [[item for sublist in block_ids_list for item in sublist]]
-
-            for block_ids in block_ids_list:
-                indices = torch.tensor(block_ids, device=sample_cache.device)
-
-                for _, cache_or_caches in self.device_kv_caches.items():
-                    cache_list = cache_or_caches if split_k_and_v else [cache_or_caches]
-                    for cache in cache_list:
-                        blocks_to_update = cache.index_select(0, indices)
-                        # because kv_cache is always using original layout NHD as
-                        # virtual shape while stride can be either HND / NHD at
-                        # initialization.
-                        # we need to firstly get physical view of the tensor
-                        permuted_blocks = _process_local_gt_remote(
-                            blocks_to_update.permute(0, 2, 1, 3), block_size_ratio
-                        ).permute(0, 2, 1, 3)
-                        cache.index_copy_(0, indices, permuted_blocks)
-
-    def get_finished(self) -> tuple[set[str], set[str]]:
-        """
-        Get requests that are done sending or recving on this specific worker.
-        The scheduler process (via the MultiprocExecutor) will use this output
-        to track which workers are done.
-        """
-        done_sending = self._get_new_notifs()
-        done_recving = self._pop_done_transfers(self._recving_transfers)
-
-        # add requests that skipped transfer to done_recving
-        done_recving.update(self._failed_recv_reqs)
-        self._failed_recv_reqs.clear()
-
-        if len(done_sending) > 0 or len(done_recving) > 0:
-            logger.debug(
-                "Rank %s, get_finished: %s requests done sending "
-                "and %s requests done recving",
-                self.tp_rank,
-                len(done_sending),
-                len(done_recving),
-            )
-
-        block_ids_to_permute = []
-        block_ids_for_blocksize_post_process = defaultdict(list)
-        for req_id in done_recving:
-            # clean up metadata for completed requests
-            meta = self._recving_metadata.pop(req_id, None)
-            assert meta is not None, f"{req_id} not found in recving_metadata list"
-            if self.use_host_buffer:
-                self.sync_recved_kv_to_device(req_id, meta)
-            if self.enable_permute_local_kv:
-                block_ids_to_permute += meta.local_physical_block_ids
-
-            # post processing for heteroblocksize
-            block_size_ratio = self.kv_topo.block_size_ratio_from_engine_id(
-                meta.remote_engine_id
-            )
-            if (
-                not self.use_mla
-                and block_size_ratio > 1
-                and self.kv_cache_layout == "HND"
-            ):
-                block_ids_for_blocksize_post_process[block_size_ratio].append(
-                    meta.local_block_ids
-                )
-        self.blocksize_post_process(block_ids_for_blocksize_post_process)
-        if len(block_ids_to_permute) > 0:
-            self.permute_device_kv(block_ids_to_permute)
-
-        # Handle timeout to avoid stranding blocks on remote.
-        now = time.perf_counter()
-        while self._reqs_to_send:
-            req_id, expires = next(iter(self._reqs_to_send.items()))
-            # Sorted dict, oldest requests are put first so we can exit early.
-            if now < expires:
-                break
-            count = self.consumer_notification_counts_by_req.pop(req_id, 0)
-            logger.warning(
-                "Releasing expired KV blocks for request %s which were "
-<<<<<<< HEAD
-                "retrieved by %d decode worker(s) within %d seconds.",
-                req_id,
-                count,
-                envs.VLLM_NIXL_ABORT_REQUEST_TIMEOUT,
-            )
-=======
-                "retrieved by %d decode worker(s) within %d seconds.", req_id,
-                count, envs.VLLM_NIXL_ABORT_REQUEST_TIMEOUT)
->>>>>>> upstream/releases/v0.11.0
             self._reqs_to_process.remove(req_id)
             del self._reqs_to_send[req_id]
             done_sending.add(req_id)
@@ -1956,15 +1519,11 @@ class NixlConnectorWorker:
         for notifs in self.nixl_wrapper.get_new_notifs().values():
             for notif in notifs:
                 req_id, tp_ratio = notif.decode("utf-8").rsplit(":", 1)
-<<<<<<< HEAD
                 if (
                     req_id not in self._reqs_to_send
                     and req_id not in self._reqs_to_process
                 ):
-=======
-                if (req_id not in self._reqs_to_send
-                        and req_id not in self._reqs_to_process):
->>>>>>> upstream/releases/v0.11.0
+
                     logger.error(
                         "Potentially invalid KV blocks for "
                         "unrecognized request %s were retrieved by "
@@ -2070,15 +1629,13 @@ class NixlConnectorWorker:
         for req_id in metadata.reqs_in_batch:
             self._reqs_to_process.add(req_id)
 
-<<<<<<< HEAD
         # Remove all requests that are not to be processed (eg aborted).
         for req_id in metadata.reqs_not_processed:
             self._reqs_to_process.discard(req_id)
             # We should never get an abort after setting an expiry timer
             assert req_id not in self._reqs_to_send
 
-=======
->>>>>>> upstream/releases/v0.11.0
+
         # Add to requests that are waiting to be read and track expiration.
         for req_id, expiration_time in metadata.reqs_to_send.items():
             if req_id in self._reqs_to_process:
@@ -2314,7 +1871,6 @@ class NixlConnectorWorker:
         descs_ids = region_ids * num_blocks + block_ids
         return descs_ids.flatten()
 
-<<<<<<< HEAD
     def _logical_to_kernel_block_ids(self, block_ids: list[int]) -> list[int]:
         """
         Convert logical block ids to kernel physical block ids.
@@ -2332,8 +1888,7 @@ class NixlConnectorWorker:
             block_ids_np, self._physical_blocks_per_logical_kv_block, block_arange
         ).tolist()
 
-=======
->>>>>>> upstream/releases/v0.11.0
+
     def get_backend_aware_kv_block_len(self, layer_idx: int):
         """
         Get the block length for one K/V element (K and V have the same size).

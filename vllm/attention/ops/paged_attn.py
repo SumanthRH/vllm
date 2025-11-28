@@ -52,7 +52,7 @@ class PagedAttention:
         cache_dtype_str: str = "auto",
 <<<<<<< HEAD
     ) -> tuple[int, ...]:
-=======
+
     ) -> Tuple[int, ...]:
 >>>>>>> upstream/releases/v0.11.0
         return (2, num_blocks, block_size * num_kv_heads * head_size)

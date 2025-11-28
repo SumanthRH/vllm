@@ -386,10 +386,7 @@ class UBatchWrapper:
 
         # If there's no ubatching, just run the runnable object
         if ubatch_slices is None:
-<<<<<<< HEAD
-=======
 
->>>>>>> upstream/releases/v0.11.0
             # This is to account for the case where ubatching was aborted.
             # When we capture full graphs we only capture one graph per shape,
             # meaning that if we have a ubatched  cudagraph for the current
@@ -403,7 +400,7 @@ class UBatchWrapper:
 
 <<<<<<< HEAD
             if cudagraph_runtime_mode in (CUDAGraphMode.NONE, CUDAGraphMode.PIECEWISE):
-=======
+
             if cudagraph_runtime_mode in (CUDAGraphMode.NONE,
                                           CUDAGraphMode.PIECEWISE):
 >>>>>>> upstream/releases/v0.11.0

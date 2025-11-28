@@ -1137,13 +1137,9 @@ def unify_hybrid_kv_cache_specs(kv_cache_spec: dict[str, KVCacheSpec]):
     """
 
     if is_kv_cache_spec_uniform(
-<<<<<<< HEAD
         kv_cache_spec
     ) or UniformTypeKVCacheSpecs.is_uniform_type(kv_cache_spec):
-=======
-            kv_cache_spec) or UniformTypeKVCacheSpecs.is_uniform_type(
-                kv_cache_spec):
->>>>>>> upstream/releases/v0.11.0
+
         return
 
     logger.warning(
@@ -1190,7 +1186,7 @@ def unify_hybrid_kv_cache_specs(kv_cache_spec: dict[str, KVCacheSpec]):
             "Hybrid KV cache manager is disabled but failed to "
             "convert the KV cache specs to one unified type."
         )
-=======
+
     if not (is_kv_cache_spec_uniform(kv_cache_spec)
             or UniformTypeKVCacheSpecs.is_uniform_type(kv_cache_spec)):
         raise ValueError("Hybrid KV cache manager is disabled but failed to "

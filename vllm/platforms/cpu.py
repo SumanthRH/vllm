@@ -123,7 +123,6 @@ class CpuPlatform(Platform):
         return "cpu"
 
     @classmethod
-<<<<<<< HEAD
     def get_attn_backend_cls(
         cls,
         selected_backend: "AttentionBackendEnum",
@@ -139,13 +138,7 @@ class CpuPlatform(Platform):
         from vllm.attention.backends.registry import AttentionBackendEnum
 
         if selected_backend and selected_backend != AttentionBackendEnum.CPU_ATTN:
-=======
-    def get_attn_backend_cls(cls, selected_backend: _Backend, head_size: int,
-                             dtype: torch.dtype, kv_cache_dtype: Optional[str],
-                             block_size: int, use_v1: bool, use_mla: bool,
-                             has_sink: bool, use_sparse: bool) -> str:
-        if selected_backend and selected_backend != _Backend.TORCH_SDPA:
->>>>>>> upstream/releases/v0.11.0
+
             logger.info("Cannot use %s backend on CPU.", selected_backend)
         if use_mla:
             raise NotImplementedError("MLA is not supported on CPU.")
@@ -153,7 +146,7 @@ class CpuPlatform(Platform):
 <<<<<<< HEAD
             raise NotImplementedError("Sparse Attention is not supported on CPU.")
         return AttentionBackendEnum.CPU_ATTN.get_path()
-=======
+
             raise NotImplementedError(
                 "Sparse Attention is not supported on CPU.")
         logger.info("Using Torch SDPA backend.")

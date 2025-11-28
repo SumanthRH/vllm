@@ -18,7 +18,6 @@ class MLAModules:
     kv_b_proj: torch.nn.Module
     rotary_emb: torch.nn.Module
     o_proj: torch.nn.Module
-<<<<<<< HEAD
     fused_qkv_a_proj: torch.nn.Module | None
     kv_a_proj_with_mqa: torch.nn.Module | None
     q_a_layernorm: torch.nn.Module | None
@@ -28,15 +27,8 @@ class MLAModules:
     indexer_rotary_emb: torch.nn.Module | None
     is_sparse: bool
     topk_indices_buffer: torch.Tensor | None
+
 =======
-    fused_qkv_a_proj: Optional[torch.nn.Module]
-    kv_a_proj_with_mqa: Optional[torch.nn.Module]
-    q_a_layernorm: Optional[torch.nn.Module]
-    q_b_proj: Optional[torch.nn.Module]
-    q_proj: Optional[torch.nn.Module]
-    indexer: Optional[torch.nn.Module]
-    is_sparse: bool
-    topk_indices_buffer: Optional[torch.Tensor]
 >>>>>>> upstream/releases/v0.11.0
 
 
@@ -92,49 +84,9 @@ class MultiHeadLatentAttentionWrapper(CustomOp):
         self.rotary_emb = mla_modules.rotary_emb
         self.o_proj = mla_modules.o_proj
         self.indexer = mla_modules.indexer
-<<<<<<< HEAD
         self.indexer_rope_emb = mla_modules.indexer_rotary_emb
         self.is_sparse = mla_modules.is_sparse
-=======
-        self.is_sparse = mla_modules.is_sparse
 
-        if self.indexer is not None:
-            assert hasattr(self.indexer, "topk_tokens")
-            self.topk_tokens = self.indexer.topk_tokens
-            self.topk_indices_buffer = mla_modules.topk_indices_buffer
->>>>>>> upstream/releases/v0.11.0
-
-        if self.indexer is not None:
-            assert hasattr(self.indexer, "topk_tokens")
-            self.topk_tokens = self.indexer.topk_tokens
-            self.topk_indices_buffer = mla_modules.topk_indices_buffer
-
-        self.mla_attn = MLAAttention(
-            num_heads=self.num_heads,
-            scale=scale,
-            qk_nope_head_dim=self.qk_nope_head_dim,
-            qk_rope_head_dim=self.qk_rope_head_dim,
-            v_head_dim=self.v_head_dim,
-            q_lora_rank=self.q_lora_rank,
-            kv_lora_rank=self.kv_lora_rank,
-            cache_config=cache_config,
-            quant_config=quant_config,
-            prefix=f"{prefix}.attn",
-<<<<<<< HEAD
-            kv_b_proj=self.kv_b_proj,
-            use_sparse=self.is_sparse,
-=======
-            use_mla=True,
-            use_sparse=mla_modules.is_sparse,
-            # MLA Args
-            q_lora_rank=self.q_lora_rank,
-            kv_lora_rank=self.kv_lora_rank,
-            qk_nope_head_dim=self.qk_nope_head_dim,
-            qk_rope_head_dim=self.qk_rope_head_dim,
-            qk_head_dim=self.qk_head_dim,
-            v_head_dim=self.v_head_dim,
-            kv_b_proj=self.kv_b_proj,
->>>>>>> upstream/releases/v0.11.0
             indexer=self.indexer,
         )
 
@@ -191,6 +143,10 @@ class MultiHeadLatentAttentionWrapper(CustomOp):
             _topk_indices = self.indexer(
                 hidden_states, q_c, positions, self.indexer_rope_emb
             )
+
+        if self.indexer and self.is_sparse:
+            _topk_indices = self.indexer(hidden_states, q_c, positions,
+                                         self.rotary_emb)
 
         if self.indexer and self.is_sparse:
             _topk_indices = self.indexer(hidden_states, q_c, positions,
