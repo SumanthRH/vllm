@@ -55,8 +55,6 @@ class HTTPConnection:
         timeout: float | None = None,
         extra_headers: Mapping[str, str] | None = None,
 
-=======
->>>>>>> upstream/releases/v0.11.0
         allow_redirects: bool = True,
     ):
         self._validate_http_url(url)
@@ -72,8 +70,6 @@ class HTTPConnection:
             allow_redirects=allow_redirects,
         )
 
-=======
->>>>>>> upstream/releases/v0.11.0
 
     async def get_async_response(
         self,
@@ -82,8 +78,6 @@ class HTTPConnection:
         timeout: float | None = None,
         extra_headers: Mapping[str, str] | None = None,
 
-=======
->>>>>>> upstream/releases/v0.11.0
         allow_redirects: bool = True,
     ):
         self._validate_http_url(url)
@@ -105,8 +99,6 @@ class HTTPConnection:
             url, timeout=timeout, allow_redirects=allow_redirects
         ) as r:
 
-=======
->>>>>>> upstream/releases/v0.11.0
             r.raise_for_status()
 
             return r.content

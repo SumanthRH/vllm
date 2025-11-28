@@ -59,8 +59,6 @@ from vllm.model_executor.model_loader.weight_utils import (
     maybe_remap_kv_scale_name,
 )
 
-=======
->>>>>>> upstream/releases/v0.11.0
 from vllm.model_executor.models.utils import sequence_parallel_chunk
 from vllm.sequence import IntermediateTensors
 
@@ -117,8 +115,6 @@ class GraniteMoeMoE(nn.Module):
             is_sequence_parallel=self.is_sequence_parallel,
         )
 
-=======
->>>>>>> upstream/releases/v0.11.0
 
     def forward(self, hidden_states: torch.Tensor) -> torch.Tensor:
         # NOTE: hidden_states can have either 1D or 2D shape.
@@ -259,12 +255,10 @@ class GraniteMoeDecoderLayer(nn.Module):
             intermediate_size=config.intermediate_size,
             quant_config=quant_config,
             is_sequence_parallel=parallel_config.use_sequence_parallel_moe,
-<<<<<<< HEAD
             prefix=f"{prefix}.block_sparse_moe",
         )
 
             prefix=f"{prefix}.block_sparse_moe")
->>>>>>> upstream/releases/v0.11.0
 
         self.input_layernorm = RMSNorm(config.hidden_size, eps=config.rms_norm_eps)
         self.post_attention_layernorm = RMSNorm(
@@ -316,12 +310,10 @@ class GraniteMoeModel(nn.Module):
         self.start_layer, self.end_layer, self.layers = make_layers(
             config.num_hidden_layers,
             lambda prefix: GraniteMoeDecoderLayer(vllm_config, prefix=prefix),
-<<<<<<< HEAD
             prefix=f"{prefix}.layers",
         )
 
             prefix=f"{prefix}.layers")
->>>>>>> upstream/releases/v0.11.0
 
         self.norm = RMSNorm(config.hidden_size, eps=config.rms_norm_eps)
 

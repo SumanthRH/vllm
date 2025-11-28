@@ -28,8 +28,6 @@ class MLAModules:
     is_sparse: bool
     topk_indices_buffer: torch.Tensor | None
 
-=======
->>>>>>> upstream/releases/v0.11.0
 
 
 @CustomOp.register("multi_head_latent_attention")

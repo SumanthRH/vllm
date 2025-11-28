@@ -2,8 +2,6 @@
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 import asyncio
 
-=======
->>>>>>> upstream/releases/v0.11.0
 import hashlib
 import importlib
 import inspect
@@ -1402,7 +1400,6 @@ class AuthenticationMiddleware:
 
     def __init__(self, app: ASGIApp, tokens: list[str]) -> None:
         self.app = app
-<<<<<<< HEAD
         self.api_tokens = [hashlib.sha256(t.encode("utf-8")).digest() for t in tokens]
 
 
@@ -1422,7 +1419,6 @@ class AuthenticationMiddleware:
             token_match |= secrets.compare_digest(param_hash, token_hash)
 
         return token_match
->>>>>>> upstream/releases/v0.11.0
 
     def verify_token(self, headers: Headers) -> bool:
         authorization_header_value = headers.get("Authorization")
@@ -1451,12 +1447,10 @@ class AuthenticationMiddleware:
         headers = Headers(scope=scope)
         # Type narrow to satisfy mypy.
         if url_path.startswith("/v1") and not self.verify_token(headers):
-<<<<<<< HEAD
             response = JSONResponse(content={"error": "Unauthorized"}, status_code=401)
 
             response = JSONResponse(content={"error": "Unauthorized"},
                                     status_code=401)
->>>>>>> upstream/releases/v0.11.0
             return response(scope, receive, send)
         return self.app(scope, receive, send)
 

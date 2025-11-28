@@ -343,7 +343,6 @@ class FlashDecoderLayer(nn.Module):
         max_position_embeddings = getattr(config, "max_position_embeddings", 8192)
 
         # Dual attention structure
-<<<<<<< HEAD
         self.self_attn = nn.ModuleList(
             [
                 DeepseekV2MLAAttention(
@@ -374,7 +373,6 @@ class FlashDecoderLayer(nn.Module):
         self.post_attention_layernorm = nn.ModuleList(
             [RMSNorm(config.hidden_size, eps=config.rms_norm_eps) for i in range(2)]
         )
-=======
         self.self_attn = nn.ModuleList([
             DeepseekV2MLAAttention(
                 vllm_config=vllm_config,
@@ -404,7 +402,6 @@ class FlashDecoderLayer(nn.Module):
             RMSNorm(config.hidden_size, eps=config.rms_norm_eps)
             for i in range(2)
         ])
->>>>>>> upstream/releases/v0.11.0
 
         # Dual MLP structure
         self.mlps = nn.ModuleList(

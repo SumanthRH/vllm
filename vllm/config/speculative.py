@@ -48,8 +48,6 @@ SpeculativeMethod = Literal[
     EagleModelTypes,
 ]
 
-=======
->>>>>>> upstream/releases/v0.11.0
 
 
 @config
@@ -330,8 +328,6 @@ class SpeculativeConfig:
                     allowed_local_media_path=self.target_model_config.allowed_local_media_path,
                     allowed_media_domains=self.target_model_config.allowed_media_domains,
 
-=======
->>>>>>> upstream/releases/v0.11.0
                     dtype=self.target_model_config.dtype,
                     seed=self.target_model_config.seed,
                     revision=self.revision,

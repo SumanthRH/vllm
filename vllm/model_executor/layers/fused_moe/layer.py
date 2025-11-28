@@ -3,8 +3,6 @@
 
 from collections.abc import Callable, Iterable
 
-=======
->>>>>>> upstream/releases/v0.11.0
 from contextlib import nullcontext
 from enum import Enum
 from functools import partial

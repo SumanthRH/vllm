@@ -245,8 +245,6 @@ class Platform:
         attn_type: str | None = None,
     ) -> str:
 
-=======
->>>>>>> upstream/releases/v0.11.0
         """Get the attention backend class of a device."""
         return ""
 

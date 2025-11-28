@@ -72,8 +72,6 @@ class DeepSeekMultiTokenPredictorLayer(nn.Module):
 
         self.device = current_platform.device_type
 
-=======
->>>>>>> upstream/releases/v0.11.0
 
         self.is_v32 = hasattr(config, "index_topk")
         if self.is_v32:

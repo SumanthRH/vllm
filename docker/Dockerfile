@@ -15,7 +15,15 @@ ARG PYTHON_VERSION=3.12
 # Example:
 # docker build --build-arg BUILD_BASE_IMAGE=registry.acme.org/mirror/nvidia/cuda:${CUDA_VERSION}-devel-ubuntu20.04
 
+<<<<<<< HEAD
+<<<<<<< HEAD
 # Important: We build with an old version of Ubuntu to maintain broad
+=======
+# Important: We build with an old version of Ubuntu to maintain broad 
+>>>>>>> upstream/releases/v0.11.0
+=======
+# Important: We build with an old version of Ubuntu to maintain broad 
+>>>>>>> upstream/releases/v0.11.0
 # compatibility with other Linux OSes. The main reason for this is that the
 # glibc version is baked into the distro, and binaries built with one glibc
 # version are not backwards compatible with OSes that use an earlier version.
@@ -85,6 +93,8 @@ ARG GET_PIP_URL
 RUN echo 'tzdata tzdata/Areas select America' | debconf-set-selections \
     && echo 'tzdata tzdata/Zones/America select Los_Angeles' | debconf-set-selections \
     && apt-get update -y \
+<<<<<<< HEAD
+<<<<<<< HEAD
     && apt-get install -y --no-install-recommends \
         ccache \
         software-properties-common \
@@ -99,8 +109,12 @@ RUN echo 'tzdata tzdata/Areas select America' | debconf-set-selections \
         g++-10 \
     && update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-10 110 --slave /usr/bin/g++ g++ /usr/bin/g++-10 \
     && rm -rf /var/lib/apt/lists/* \
-
+=======
     && apt-get install -y ccache software-properties-common git curl sudo python3-pip \
+>>>>>>> upstream/releases/v0.11.0
+=======
+    && apt-get install -y ccache software-properties-common git curl sudo python3-pip \
+>>>>>>> upstream/releases/v0.11.0
     && curl -LsSf https://astral.sh/uv/install.sh | sh \
     && $HOME/.local/bin/uv venv /opt/venv --python ${PYTHON_VERSION} \
     && rm -f /usr/bin/python3 /usr/bin/python3-config /usr/bin/pip \
@@ -391,14 +405,16 @@ RUN --mount=type=bind,from=build,src=/workspace/dist,target=/vllm-workspace/dist
     uv pip install --system dist/*.whl --verbose \
         --extra-index-url ${PYTORCH_CUDA_INDEX_BASE_URL}/cu$(echo $CUDA_VERSION | cut -d. -f1,2 | tr -d '.')
 
-# # Install FlashInfer pre-compiled kernel cache and binaries
-# # https://docs.flashinfer.ai/installation.html
-# RUN --mount=type=cache,target=/root/.cache/uv \
-#     uv pip install --system flashinfer-cubin==0.5.2 \
-#     && uv pip install --system flashinfer-jit-cache==0.5.2 \
-#         --extra-index-url https://flashinfer.ai/whl/cu$(echo $CUDA_VERSION | cut -d. -f1,2 | tr -d '.') \
-#     && flashinfer show-config
+# Install FlashInfer pre-compiled kernel cache and binaries
+# https://docs.flashinfer.ai/installation.html
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv pip install --system flashinfer-cubin==0.5.2 \
+    && uv pip install --system flashinfer-jit-cache==0.5.2 \
+        --extra-index-url https://flashinfer.ai/whl/cu$(echo $CUDA_VERSION | cut -d. -f1,2 | tr -d '.') \
+    && flashinfer show-config
 
+<<<<<<< HEAD
+=======
 # Install FlashInfer from source
 ARG FLASHINFER_GIT_REPO="https://github.com/flashinfer-ai/flashinfer.git"
 # Keep this in sync with "flashinfer" extra in setup.py
@@ -446,6 +462,7 @@ RUN --mount=type=cache,target=/root/.cache/uv bash - <<'BASH'
     popd
     rm -rf flashinfer
 BASH
+>>>>>>> upstream/releases/v0.11.0
 COPY examples examples
 COPY benchmarks benchmarks
 COPY ./vllm/collect_env.py .

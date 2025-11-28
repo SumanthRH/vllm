@@ -1526,7 +1526,6 @@ class EngineArgs:
                 raise NotImplementedError(
                     "Draft model speculative decoding is not supported yet. "
                     "Please consider using other speculative decoding methods "
-<<<<<<< HEAD
                     "such as ngram, medusa, eagle, or mtp."
                 )
 
@@ -1557,7 +1556,6 @@ class EngineArgs:
 
         #############################################################
         # Experimental Features - allow users to opt in.
->>>>>>> upstream/releases/v0.11.0
 
         if self.pipeline_parallel_size > 1:
             supports_pp = getattr(

@@ -65,6 +65,8 @@ void indexer_k_quant_and_cache(
     torch::Tensor& slot_mapping,  // [num_tokens]
     int64_t quant_block_size,     // quantization block size
     const std::string& scale_fmt);
+<<<<<<< HEAD
+<<<<<<< HEAD
 
 // Extract function to gather quantized K cache
 void cp_gather_indexer_k_quant_cache(
@@ -73,3 +75,7 @@ void cp_gather_indexer_k_quant_cache(
     torch::Tensor& dst_scale,  // [num_tokens, head_dim / quant_block_size * 4]
     const torch::Tensor& block_table,   // [batch_size, num_blocks]
     const torch::Tensor& cu_seq_lens);  // [batch_size + 1]
+=======
+>>>>>>> upstream/releases/v0.11.0
+=======
+>>>>>>> upstream/releases/v0.11.0

@@ -698,7 +698,6 @@ def test_propose_tree(spec_token_tree):
     # Mock runner for attention metadata building.
     proposer.runner = mock.MagicMock()
     proposer.runner.attn_groups.append([mock.MagicMock()])
-<<<<<<< HEAD
     proposer.runner.attn_groups[0][0].metadata_builders = [attn_metadata_builder]
     proposer.runner.attn_groups[0][
         0
@@ -709,7 +708,6 @@ def test_propose_tree(spec_token_tree):
     ]
     proposer.runner.attn_groups[0][0].get_metadata_builder.return_value = \
         attn_metadata_builder
->>>>>>> upstream/releases/v0.11.0
     proposer._get_attention_metadata_builder = mock.MagicMock(
         return_value=attn_metadata_builder
     )

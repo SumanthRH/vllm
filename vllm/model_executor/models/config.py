@@ -380,8 +380,6 @@ class HybridAttentionMambaModelConfig(VerifyAndUpdateConfig):
                 dtype=kv_cache_dtype,
             ).page_size_bytes
 
-=======
->>>>>>> upstream/releases/v0.11.0
 
         model_cls, _ = ModelRegistry.resolve_model_cls(
             model_config.architecture,

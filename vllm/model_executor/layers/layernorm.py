@@ -423,8 +423,6 @@ class RMSNormGated(CustomOp):
             norm_before_gate=self.norm_before_gate,
         )
 
-=======
->>>>>>> upstream/releases/v0.11.0
 
 
 class LayerNorm(nn.Module):

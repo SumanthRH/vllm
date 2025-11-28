@@ -1118,11 +1118,7 @@ class MLACommonBaseImpl(MLAAttentionImpl[A], Generic[A]):
         v_head_dim: int,
         kv_b_proj: ColumnParallelLinear,
         indexer=None,
-<<<<<<< HEAD
         q_pad_num_heads: int | None = None,
-
-        q_pad_num_heads: Optional[int] = None,
->>>>>>> upstream/releases/v0.11.0
     ) -> None:
         if kv_sharing_target_layer_name is not None:
             raise NotImplementedError("KV sharing is not supported for MLA")

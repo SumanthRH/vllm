@@ -315,7 +315,6 @@ class AriaTextDecoderLayer(LlamaDecoderLayer):
         config = vllm_config.model_config.hf_config
         quant_config = vllm_config.quant_config
 
-<<<<<<< HEAD
         self.mlp = AriaTextMoELayer(
             config, quant_config=quant_config, prefix=f"{prefix}.mlp"
         )
@@ -323,7 +322,6 @@ class AriaTextDecoderLayer(LlamaDecoderLayer):
         self.mlp = AriaTextMoELayer(config,
                                     quant_config=quant_config,
                                     prefix=f"{prefix}.mlp")
->>>>>>> upstream/releases/v0.11.0
 
 
 class AriaTextModel(LlamaModel, SupportsQuant):

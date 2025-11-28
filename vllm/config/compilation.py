@@ -540,8 +540,6 @@ class CompilationConfig:
         "vllm::kda_attention",
         "vllm::sparse_attn_indexer",
 
-=======
->>>>>>> upstream/releases/v0.11.0
     ]
 
     def compute_hash(self) -> str:

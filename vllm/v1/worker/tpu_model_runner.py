@@ -607,7 +607,6 @@ class TPUModelRunner(LoRAModelRunnerMixin, KVConnectorModelRunnerMixin):
                     self.shared_kv_cache_layers[layer_name] = kv_tgt_layer
                     continue
 
-<<<<<<< HEAD
                 if attn_module.attn_type == AttentionType.DECODER:
                     if isinstance(attn_module, ChunkedLocalAttention):
                         logger.warning_once(
@@ -650,7 +649,6 @@ class TPUModelRunner(LoRAModelRunnerMixin, KVConnectorModelRunnerMixin):
                     dtype=self.kv_cache_dtype,
                     cache_dtype_str=cache_dtype_str,
                 )
-=======
             if attn_module.attn_type == AttentionType.DECODER:
                 if isinstance(attn_module, ChunkedLocalAttention):
                     logger.warning_once(
@@ -677,7 +675,6 @@ class TPUModelRunner(LoRAModelRunnerMixin, KVConnectorModelRunnerMixin):
                 continue
             elif attn_module.attn_type == AttentionType.ENCODER_DECODER:
                 raise NotImplementedError
->>>>>>> upstream/releases/v0.11.0
             else:
                 continue
 

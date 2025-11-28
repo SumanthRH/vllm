@@ -238,14 +238,12 @@ class OpenAIServingChat(OpenAIServing):
                     request,
                     tokenizer,
                     request.messages,
-<<<<<<< HEAD
                     chat_template=request.chat_template or self.chat_template,
                     chat_template_content_format=self.chat_template_content_format,
 
                     chat_template=request_chat_template or self.chat_template,
                     chat_template_content_format=self.
                     chat_template_content_format,
->>>>>>> upstream/releases/v0.11.0
                     add_generation_prompt=request.add_generation_prompt,
                     continue_final_message=request.continue_final_message,
                     tool_dicts=tool_dicts,

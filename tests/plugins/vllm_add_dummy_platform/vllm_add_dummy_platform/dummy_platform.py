@@ -32,6 +32,4 @@ class DummyPlatform(Platform):
         use_sparse,
     ):
 
-=======
->>>>>>> upstream/releases/v0.11.0
         return "vllm_add_dummy_platform.dummy_attention_backend.DummyAttentionBackend"  # noqa E501

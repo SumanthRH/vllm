@@ -207,8 +207,6 @@ class Attention(nn.Module, AttentionLayerBase):
         logits_soft_cap: float | None = None,
         per_layer_sliding_window: int | None = None,
 
-=======
->>>>>>> upstream/releases/v0.11.0
         prefix: str = "",
         attn_type: str = AttentionType.DECODER,
         kv_sharing_target_layer_name: str | None = None,
@@ -253,8 +251,6 @@ class Attention(nn.Module, AttentionLayerBase):
         )
 
 
-=======
->>>>>>> upstream/releases/v0.11.0
         self.num_heads = num_heads
         self.head_size = head_size
         self.num_kv_heads = num_kv_heads
@@ -275,8 +271,6 @@ class Attention(nn.Module, AttentionLayerBase):
                 attn_type=attn_type,
             )
 
-=======
->>>>>>> upstream/releases/v0.11.0
         else:
             self.attn_backend = attn_backend
 

@@ -183,8 +183,6 @@ class LlamaModel(nn.Module):
                 prefix=maybe_prefix(prefix, "fc"),
                 return_bias=False,
 
-=======
->>>>>>> upstream/releases/v0.11.0
             )
         self.norm = RMSNorm(
             self.config.hidden_size,

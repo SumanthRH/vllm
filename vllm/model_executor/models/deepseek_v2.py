@@ -80,8 +80,6 @@ from vllm.v1.attention.backends.mla.indexer import (
     DeepseekV32IndexerMetadata,
 )
 
-=======
->>>>>>> upstream/releases/v0.11.0
 from vllm.v1.kv_cache_interface import KVCacheSpec, MLAAttentionSpec
 
 from .interfaces import MixtureOfExperts, SupportsEagle, SupportsLoRA, SupportsPP
@@ -1219,7 +1217,6 @@ class DeepseekV2Model(nn.Module):
             self.embed_tokens = PPMissingLayer()
         self.start_layer, self.end_layer, self.layers = make_layers(
             config.num_hidden_layers,
-<<<<<<< HEAD
             lambda prefix: DeepseekV2DecoderLayer(
                 vllm_config, prefix, topk_indices_buffer=topk_indices_buffer
             ),
@@ -1229,7 +1226,6 @@ class DeepseekV2Model(nn.Module):
             lambda prefix: DeepseekV2DecoderLayer(vllm_config, prefix,
                                                   topk_indices_buffer),
             prefix=f"{prefix}.layers")
->>>>>>> upstream/releases/v0.11.0
 
         if get_pp_group().is_last_rank:
             self.norm = RMSNorm(config.hidden_size, eps=config.rms_norm_eps)

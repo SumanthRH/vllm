@@ -1184,7 +1184,6 @@ def maybe_post_process_fp8_weight_block(layer: torch.nn.Module):
     # requantize the weight and input to the specific scale
     # at the same time.
     should_use_deepgemm = should_use_deepgemm_for_fp8_linear(
-<<<<<<< HEAD
         layer.orig_dtype, layer.weight
 
         layer.orig_dtype, layer.weight)
@@ -1215,7 +1214,6 @@ def apply_fp8_block_linear(layer: torch.nn.Module, input: torch.Tensor,
         bias=bias,
         cutlass_block_fp8_supported=cutlass_block_fp8_supported,
         use_aiter_and_is_supported=use_aiter_and_is_supported,
->>>>>>> upstream/releases/v0.11.0
     )
     if should_use_deepgemm:
         dg_weight, dg_weight_scale = deepgemm_post_process_fp8_weight_block(

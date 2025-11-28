@@ -59,8 +59,6 @@ class ErnieMultiTokenPredictorLayer(nn.Module):
             config.hidden_size * 2, config.hidden_size, bias=False
         )
 
-=======
->>>>>>> upstream/releases/v0.11.0
         self.mtp_block = LlamaDecoderLayer(vllm_config, prefix)
 
     def forward(

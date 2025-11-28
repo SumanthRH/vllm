@@ -263,7 +263,6 @@ class UniformTypeKVCacheSpecs(KVCacheSpec):
         one_spec = next(iter(kv_cache_specs.values()))
         if isinstance(one_spec, FullAttentionSpec):
             return all(
-<<<<<<< HEAD
                 isinstance(spec, FullAttentionSpec) for spec in kv_cache_specs.values()
             )
         elif isinstance(one_spec, CrossAttentionSpec):
@@ -276,7 +275,6 @@ class UniformTypeKVCacheSpecs(KVCacheSpec):
             return all(
                 isinstance(spec, CrossAttentionSpec)
                 for spec in kv_cache_specs.values())
->>>>>>> upstream/releases/v0.11.0
         elif isinstance(one_spec, SlidingWindowSpec):
             return all(
                 isinstance(spec, SlidingWindowSpec)

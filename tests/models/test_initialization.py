@@ -13,8 +13,6 @@ from vllm.v1.core.kv_cache_utils import (
     get_kv_cache_configs,
 )
 
-=======
->>>>>>> upstream/releases/v0.11.0
 from vllm.v1.engine.core import EngineCore as V1EngineCore
 
 from ..utils import create_new_process_for_each_test

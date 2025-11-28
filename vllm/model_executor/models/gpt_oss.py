@@ -20,8 +20,6 @@ from vllm.distributed import (
     tensor_model_parallel_all_gather,
 )
 
-=======
->>>>>>> upstream/releases/v0.11.0
 from vllm.model_executor.layers.fused_moe import FusedMoE
 from vllm.model_executor.layers.fused_moe.config import FusedMoEParallelConfig
 from vllm.model_executor.layers.layernorm import RMSNorm
@@ -180,8 +178,6 @@ class MLPBlock(torch.nn.Module):
             is_sequence_parallel=self.is_sequence_parallel,
         )
 
-=======
->>>>>>> upstream/releases/v0.11.0
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         num_tokens = x.shape[0]

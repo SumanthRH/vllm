@@ -52,13 +52,11 @@ STR_FLASHINFER_ATTN_VAL: str = "FLASHINFER"
 STR_FLASH_ATTN_VAL: str = "FLASH_ATTN"
 STR_INVALID_VAL: str = "INVALID"
 
-<<<<<<< HEAD
 MASK_64_BITS = (1 << 64) - 1
 
 
 def random_uuid() -> str:
     return f"{uuid.uuid4().int & MASK_64_BITS:016x}"  # 16 hex chars
-=======
 MB_bytes = 1_000_000
 """The number of bytes in one megabyte (MB)."""
 
@@ -3459,7 +3457,6 @@ def decorate_logs(process_name: Optional[str] = None) -> None:
     pid = os.getpid()
     _add_prefix(sys.stdout, process_name, pid)
     _add_prefix(sys.stderr, process_name, pid)
->>>>>>> upstream/releases/v0.11.0
 
 
 def length_from_prompt_token_ids_or_embeds(

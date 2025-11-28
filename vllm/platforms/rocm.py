@@ -209,7 +209,6 @@ class RocmPlatform(Platform):
         return AttentionBackendEnum.TORCH_SDPA
 
     @classmethod
-<<<<<<< HEAD
     def get_attn_backend_cls(
         cls,
         selected_backend,
@@ -224,7 +223,6 @@ class RocmPlatform(Platform):
     ) -> str:
         from vllm._aiter_ops import rocm_aiter_ops
         from vllm.attention.backends.registry import AttentionBackendEnum
-=======
     def get_attn_backend_cls(cls, selected_backend, head_size, dtype,
                              kv_cache_dtype, block_size, use_v1, use_mla,
                              has_sink, use_sparse) -> str:
@@ -236,7 +234,6 @@ class RocmPlatform(Platform):
                 raise RuntimeError(
                     "MLA attention backends require the V1 engine. "
                     "Set VLLM_USE_V1=1 to enable them.")
->>>>>>> upstream/releases/v0.11.0
 
         if use_sparse:
             if kv_cache_dtype.startswith("fp8"):

@@ -55,8 +55,6 @@ class CudaCommunicator(DeviceCommunicatorBase):
 
         self.pynccl_comm: PyNcclCommunicator | None = None
 
-=======
->>>>>>> upstream/releases/v0.11.0
         if self.world_size > 1:
             self.pynccl_comm = PyNcclCommunicator(
                 group=self.cpu_group,

@@ -67,8 +67,6 @@ async def test_fetch_image_base64(
     url_images: dict[str, Image.Image], raw_image_url: str, suffix: str
 ):
 
-=======
->>>>>>> upstream/releases/v0.11.0
     connector = MediaConnector(
         # Domain restriction should not apply to data URLs.
         allowed_media_domains=[

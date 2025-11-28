@@ -113,7 +113,6 @@ def make_kv_cache_config_hybrid_model(
             ),
             KVCacheGroupSpec(
                 ["layer2"],
-<<<<<<< HEAD
                 SlidingWindowSpec(
                     block_size, 1, 1, torch.float32, sliding_window=2 * block_size
                 ),
@@ -123,7 +122,6 @@ def make_kv_cache_config_hybrid_model(
                 SlidingWindowSpec(
                     block_size, 1, 1, torch.float32, sliding_window=2 * block_size
                 ),
-=======
                 SlidingWindowSpec(block_size,
                                   1,
                                   1,
@@ -137,7 +135,6 @@ def make_kv_cache_config_hybrid_model(
                                   1,
                                   torch.float32,
                                   sliding_window=2 * block_size),
->>>>>>> upstream/releases/v0.11.0
             ),
         ],
     )

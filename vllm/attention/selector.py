@@ -191,8 +191,6 @@ def _cached_get_attn_backend(
             attn_type,
         )
 
-=======
->>>>>>> upstream/releases/v0.11.0
     if not attention_cls:
         raise ValueError(
             f"Invalid attention backend for {current_platform.device_name}"

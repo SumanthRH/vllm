@@ -398,12 +398,10 @@ class UBatchWrapper:
                 if batch_descriptor.num_tokens in self.cudagraphs:
                     cudagraph_runtime_mode = CUDAGraphMode.NONE
 
-<<<<<<< HEAD
             if cudagraph_runtime_mode in (CUDAGraphMode.NONE, CUDAGraphMode.PIECEWISE):
 
             if cudagraph_runtime_mode in (CUDAGraphMode.NONE,
                                           CUDAGraphMode.PIECEWISE):
->>>>>>> upstream/releases/v0.11.0
                 return self.runnable(*args, **kwargs)
             else:
                 assert self.cudagraph_wrapper is not None

@@ -629,15 +629,12 @@ if _is_cuda():
         # not targeting a hopper system
         ext_modules.append(CMakeExtension(name="vllm._flashmla_C", optional=True))
         ext_modules.append(
-<<<<<<< HEAD
             CMakeExtension(name="vllm._flashmla_extension_C", optional=True)
         )
-=======
             CMakeExtension(name="vllm._flashmla_C", optional=True))
         ext_modules.append(
             CMakeExtension(name="vllm._flashmla_extension_C", optional=True))
     ext_modules.append(CMakeExtension(name="vllm.cumem_allocator"))
->>>>>>> upstream/releases/v0.11.0
 
 if _build_custom_ops():
     ext_modules.append(CMakeExtension(name="vllm._C"))

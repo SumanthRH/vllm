@@ -18,8 +18,6 @@ from vllm.v1.kv_cache_interface import (
     SlidingWindowSpec,
 )
 
-=======
->>>>>>> upstream/releases/v0.11.0
 from vllm.v1.request import Request
 
 

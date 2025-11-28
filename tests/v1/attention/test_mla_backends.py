@@ -8,8 +8,6 @@ Known Issues:
   test_backend_correctness[small_prefill], but passes when run alone.
 """
 
-=======
->>>>>>> upstream/releases/v0.11.0
 
 import pytest
 import torch
@@ -135,8 +133,6 @@ def create_and_prepopulate_kv_cache(
     scale: float | torch.Tensor = 1.0,
 ) -> torch.Tensor:
 
-=======
->>>>>>> upstream/releases/v0.11.0
     """Create and prepopulate an MLA KV cache with context data.
 
     Args:

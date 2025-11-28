@@ -1019,8 +1019,6 @@ class Qwen2VLProcessingInfo(BaseProcessingInfo):
             max_total_frames // max(max_videos, 1), max_frames_per_video
         )
 
-=======
->>>>>>> upstream/releases/v0.11.0
 
         return max(max_frames_per_video, 1)
 

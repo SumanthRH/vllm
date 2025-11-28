@@ -78,8 +78,6 @@ def flash_mla_with_kvcache(
     if softmax_scale is None:
         softmax_scale = q.shape[-1] ** (-0.5)
 
-=======
->>>>>>> upstream/releases/v0.11.0
     if indices is not None:
         # NOTE (zyongye): sparse attention is also causal
         # since it only attend to the tokens before

@@ -194,12 +194,10 @@ class MediaConnector:
                 timeout=fetch_timeout,
                 allow_redirects=envs.VLLM_MEDIA_URL_ALLOW_REDIRECTS,
             )
-<<<<<<< HEAD
             future = loop.run_in_executor(global_thread_pool, media_io.load_bytes, data)
 
             future = loop.run_in_executor(global_thread_pool,
                                           media_io.load_bytes, data)
->>>>>>> upstream/releases/v0.11.0
             return await future
 
         if url_spec.scheme == "data":

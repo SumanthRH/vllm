@@ -291,8 +291,6 @@ class EagleProposer:
         draft_indexer_layer_names = indexer_layers.keys() - target_indexer_layer_names
         self.attn_layer_names = list(draft_attn_layer_names - draft_indexer_layer_names)
 
-=======
->>>>>>> upstream/releases/v0.11.0
         self.indexer_layer_names = list(draft_indexer_layer_names)
 
         if self.indexer_layer_names:
