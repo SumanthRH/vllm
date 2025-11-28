@@ -69,7 +69,6 @@ class All2AllManagerBase:
         router_logits: torch.Tensor,
         is_sequence_parallel: bool = False,
     ):
-
         raise NotImplementedError
 
     def set_num_sms(self, num_sms: int):
@@ -79,7 +78,6 @@ class All2AllManagerBase:
         return None  # None means it could use the whole GPU
 
     def combine(self, hidden_states: torch.Tensor, is_sequence_parallel: bool = False):
-
         raise NotImplementedError
 
     def destroy(self):
@@ -282,7 +280,6 @@ class DeviceCommunicatorBase:
         hidden_states: torch.Tensor,
         router_logits: torch.Tensor,
         is_sequence_parallel: bool = False,
-
     ) -> tuple[torch.Tensor, torch.Tensor]:
         """
         Dispatch the hidden states and router logits to the appropriate device.
@@ -293,7 +290,6 @@ class DeviceCommunicatorBase:
     def combine(
         self, hidden_states: torch.Tensor, is_sequence_parallel: bool = False
     ) -> torch.Tensor:
-
         """
         Combine the hidden states and router logits from the appropriate device.
         This is a no-op in the base class.

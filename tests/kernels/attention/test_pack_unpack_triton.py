@@ -78,7 +78,6 @@ def test_pack_seq_custom_padding_fp8():
             assert torch.allclose(padded_data, torch.zeros_like(padded_data), atol=1e-2)
 
 
-
 def test_pack_seq_default_negative_inf_padding_fp8():
     """Test that pack_seq_triton uses -inf padding by default for fp8."""
     device = "cuda"
@@ -96,7 +95,6 @@ def test_pack_seq_default_negative_inf_padding_fp8():
     assert torch.all(
         padded_data < -100
     )  # fp8 -inf is represented as large negative number
-
 
 
 def test_pack_seq_edge_cases_fp8():
@@ -205,7 +203,6 @@ def test_pack_unpack_roundtrip_fp8():
         assert_close(x_f32, unpacked_with_loc.to(torch.float32), rtol=1e-3, atol=1e-2)
 
 
-
 def test_unpack_seq_triton_edge_cases_fp8():
     """Test unpack function with edge cases for fp8."""
     device = "cuda"
@@ -220,7 +217,6 @@ def test_unpack_seq_triton_edge_cases_fp8():
     assert unpacked.shape == x.shape
     assert_close(x.to(torch.float32), unpacked.to(torch.float32), rtol=1e-1, atol=1e-2)
 
-
     # Test with very short sequences
     x = torch.randn(20, 4, 8, dtype=torch.float32, device=device) * 0.1
     x = x.to(dtype=dtype)
@@ -231,7 +227,6 @@ def test_unpack_seq_triton_edge_cases_fp8():
     assert_close(
         x[:3].to(torch.float32), unpacked.to(torch.float32), rtol=1e-1, atol=1e-2
     )
-
 
     x = torch.randn(15, 8, 16, dtype=torch.float32, device=device) * 0.1
     x = x.to(dtype=dtype)

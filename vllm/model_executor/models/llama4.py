@@ -35,7 +35,6 @@ from vllm.distributed import (
 )
 from vllm.logger import init_logger
 from vllm.model_executor.layers.fused_moe import SharedFusedMoE
-
 from vllm.model_executor.models.utils import sequence_parallel_chunk
 
 from .llama import LlamaForCausalLM, LlamaMLP, LlamaModel
@@ -76,7 +75,6 @@ class Llama4MoE(nn.Module):
         self.ep_group = get_ep_group().device_group
         self.ep_rank = get_ep_group().rank_in_group
         self.ep_size = self.ep_group.size()
-
 
         intermediate_size_moe = config.intermediate_size
         self.router = ReplicatedLinear(
@@ -127,7 +125,6 @@ class Llama4MoE(nn.Module):
             is_sequence_parallel=self.is_sequence_parallel,
             enable_eplb=self.enable_eplb,
             num_redundant_experts=self.n_redundant_experts,
-
         )
 
     def forward(self, hidden_states):
@@ -308,7 +305,6 @@ class Llama4DecoderLayer(nn.Module):
         prefix: str = "",
         config: Llama4TextConfig | None = None,
     ) -> None:
-
         super().__init__()
 
         config = config or vllm_config.model_config.hf_config

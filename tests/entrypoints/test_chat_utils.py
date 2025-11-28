@@ -22,7 +22,6 @@ from vllm.entrypoints.chat_utils import (
     resolve_chat_template_kwargs,
     resolve_hf_chat_template,
 )
-
 from vllm.multimodal import MultiModalDataDict, MultiModalUUIDDict
 from vllm.multimodal.utils import (
     encode_audio_base64,
@@ -1936,7 +1935,6 @@ def test_resolve_hf_chat_template(sample_json_schema, model, use_tools):
                 "add_generation_prompt",
                 "continue_final_message",
                 "tools",
-
             },
         ),
         (
@@ -1946,13 +1944,11 @@ def test_resolve_hf_chat_template(sample_json_schema, model, use_tools):
                 "add_generation_prompt",
                 "continue_final_message",
                 "tools",
-
             },
         ),
     ],
 )
 def test_resolve_hf_chat_template_kwargs(sample_json_schema, model, expected_kwargs):
-
     """checks that chat_template is a dict type for HF models."""
     model_info = HF_EXAMPLE_MODELS.find_hf_info(model)
     model_info.check_available_online(on_fail="skip")
@@ -1968,7 +1964,6 @@ def test_resolve_hf_chat_template_kwargs(sample_json_schema, model, expected_kwa
         }
     ]
 
-
     chat_template_kwargs = {
         # both unused
         "unsed_kwargs_1": 123,
@@ -1976,7 +1971,6 @@ def test_resolve_hf_chat_template_kwargs(sample_json_schema, model, expected_kwa
         # should not appear
         "chat_template": "{% Hello world! %}",
         "tokenize": True,
-
         # used by tokenizer
         "continue_final_message": True,
         "tools": tools,
@@ -2001,7 +1995,6 @@ def test_resolve_hf_chat_template_kwargs(sample_json_schema, model, expected_kwa
         enforce_eager=model_info.enforce_eager,
         dtype=model_info.dtype,
     )
-
 
     # Build the tokenizer
     tokenizer = get_tokenizer(
@@ -2067,7 +2060,6 @@ def test_resolve_hf_chat_template_kwargs(sample_json_schema, model, expected_kwa
     assert "continue_final_message" in resolved_mock
     # Unknown params should be filtered out
     assert "unknown_param" not in resolved_mock
-
 
 
 # NOTE: Qwen2-Audio default chat template is specially defined inside

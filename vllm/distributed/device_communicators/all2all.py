@@ -49,7 +49,6 @@ class NaiveAll2AllManager(All2AllManagerBase):
         rank = self.rank if is_sequence_parallel else self.dp_rank
         world_size = self.world_size if is_sequence_parallel else self.dp_world_size
 
-
         start = 0 if rank == 0 else cu_tokens_across_sp_cpu[rank - 1]
         end = cu_tokens_across_sp_cpu[rank]
         buffer[start:end, :].copy_(x)
@@ -115,7 +114,6 @@ class AgRsAll2AllManager(All2AllManagerBase):
         hidden_states: torch.Tensor,
         router_logits: torch.Tensor,
         is_sequence_parallel: bool = False,
-
     ) -> tuple[torch.Tensor, torch.Tensor]:
         """
         Gather hidden_states and router_logits from all dp ranks.
@@ -124,7 +122,6 @@ class AgRsAll2AllManager(All2AllManagerBase):
         assert dp_metadata is not None
         sizes = dp_metadata.get_chunk_sizes_across_dp_rank()
         assert sizes is not None
-
 
         dist_group = get_ep_group() if is_sequence_parallel else get_dp_group()
         assert sizes[dist_group.rank_in_group] == hidden_states.shape[0]
@@ -204,7 +201,6 @@ class PPLXAll2AllManager(All2AllManagerBase):
             pplx.AllToAll.internode if self.internode else pplx.AllToAll.intranode,
         )
 
-
     def dispatch(
         self,
         hidden_states: torch.Tensor,
@@ -216,7 +212,6 @@ class PPLXAll2AllManager(All2AllManagerBase):
     def combine(
         self, hidden_states: torch.Tensor, is_sequence_parallel: bool = False
     ) -> torch.Tensor:
-
         raise NotImplementedError
 
     def destroy(self):
@@ -264,7 +259,6 @@ class DeepEPAll2AllManagerBase(All2AllManagerBase):
     def combine(
         self, hidden_states: torch.Tensor, is_sequence_parallel: bool = False
     ) -> torch.Tensor:
-
         raise NotImplementedError
 
     def destroy(self):

@@ -46,7 +46,6 @@ from vllm.v1.kv_cache_interface import (
     UniformTypeKVCacheSpecs,
 )
 from vllm.v1.metrics.stats import CachingMetrics, PrefixCacheStats
-
 from vllm.v1.request import Request
 
 pytestmark = pytest.mark.cpu_test
@@ -124,7 +123,6 @@ def new_sliding_window_spec(
         dtype=dtype,
         sliding_window=sliding_window,
     )
-
 
 
 @pytest.mark.parametrize("hash_fn", [sha256, sha256_cbor])
@@ -1671,7 +1669,6 @@ def new_mla_spec(cache_dtype_str=None):
         dtype=torch.float32,
         cache_dtype_str=cache_dtype_str,
     )
-
 
 
 def test_merge_mla_spec():

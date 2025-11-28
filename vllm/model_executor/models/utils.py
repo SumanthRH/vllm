@@ -1,43 +1,20 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 
-import itertools
-from collections.abc import Iterable, Mapping
-from dataclasses import dataclass, field
-from typing import Any, Literal, Protocol, overload
 
 import torch
 import torch.nn as nn
-from torch.func import functional_call
-from transformers import PretrainedConfig
-from typing_extensions import deprecated
 
-from vllm.config import VllmConfig
 from vllm.distributed import (
     get_tensor_model_parallel_rank,
     get_tensor_model_parallel_world_size,
 )
-
-from vllm.logger import init_logger
-from vllm.model_executor.layers.quantization.base_config import (
-    QuantizationConfig,
-)
-from vllm.model_executor.model_loader.online_quantization import (
-    support_quantized_model_reload_from_hp_weights,
-)
-from vllm.model_executor.model_loader.weight_utils import default_weight_loader
 from vllm.model_executor.models.interfaces import supports_any_eagle
-from vllm.multimodal import NestedTensors
-from vllm.sequence import IntermediateTensors
 from vllm.utils.math_utils import cdiv
-from vllm.utils.platform_utils import (
-    is_pin_memory_available,
-    is_uva_available,
-)
 from vllm.utils.torch_utils import (
     direct_register_custom_op,
-    get_cuda_view_from_cpu_tensor,
 )
+
 
 # Chunk x along the num_tokens axis for sequence parallelism
 # NOTE: This is wrapped in a torch custom op to work around the following issue:

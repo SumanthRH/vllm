@@ -11,7 +11,6 @@ def test_sparse_flashmla_metadata_smoke():
     if not ok:
         pytest.skip(reason)
 
-
     device = torch.device("cuda")
     batch_size = 1
     seqlen_q = 1
@@ -41,7 +40,6 @@ def test_sparse_flashmla_decode_smoke():
     ok, reason = fm.is_flashmla_sparse_supported()
     if not ok:
         pytest.skip(reason)
-
 
     device = torch.device("cuda")
     batch_size = 1
@@ -106,7 +104,6 @@ def test_sparse_flashmla_prefill_smoke():
     ok, reason = fm.is_flashmla_sparse_supported()
     if not ok:
         pytest.skip(reason)
-
 
     device = torch.device("cuda")
     s_q = 1

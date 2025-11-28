@@ -197,7 +197,6 @@ class LLM:
         trust_remote_code: bool = False,
         allowed_local_media_path: str = "",
         allowed_media_domains: list[str] | None = None,
-
         tensor_parallel_size: int = 1,
         dtype: ModelDType = "auto",
         quantization: QuantizationMethods | None = None,

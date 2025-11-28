@@ -11,7 +11,6 @@ from torch import nn
 from transformers.activations import ACT2FN
 
 from vllm.attention import Attention, AttentionMetadata
-from vllm.compilation.decorators import support_torch_compile
 from vllm.config import (
     CacheConfig,
     ModelConfig,
@@ -27,7 +26,6 @@ from vllm.distributed import (
     get_tensor_model_parallel_world_size,
     tensor_model_parallel_all_gather,
 )
-
 from vllm.forward_context import ForwardContext, get_forward_context
 from vllm.logger import init_logger
 from vllm.model_executor.layers.fla.ops import (
@@ -100,7 +98,6 @@ KVCache = tuple[torch.Tensor, torch.Tensor]
 
 
 class Qwen3NextSparseMoeBlock(nn.Module):
-
     def __init__(self, vllm_config: VllmConfig, prefix: str = ""):
         super().__init__()
 
@@ -146,7 +143,6 @@ class Qwen3NextSparseMoeBlock(nn.Module):
             prefix=f"{prefix}.gate",
         )
 
-
         self.shared_expert_gate = torch.nn.Linear(config.hidden_size, 1, bias=False)
 
         if config.shared_expert_intermediate_size > 0:
@@ -188,7 +184,6 @@ class Qwen3NextSparseMoeBlock(nn.Module):
         if self.is_sequence_parallel:
             hidden_states = sequence_parallel_chunk(hidden_states)
 
-
         if self.experts.is_internal_router:
             # In this case, the gate/router runs inside the FusedMoE class
             final_hidden_states = self.experts(
@@ -200,7 +195,6 @@ class Qwen3NextSparseMoeBlock(nn.Module):
             final_hidden_states = self.experts(
                 hidden_states=hidden_states, router_logits=router_logits
             )
-
 
         if self.shared_expert is not None:
             final_hidden_states = final_hidden_states[0] + final_hidden_states[1]

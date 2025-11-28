@@ -2,7 +2,6 @@
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 import functools
 
-
 import torch
 
 from vllm.attention.backends.abstract import AttentionBackend, AttentionMetadata
@@ -22,7 +21,6 @@ from vllm.v1.kv_cache_interface import (
     ChunkedLocalAttentionSpec,
     KVCacheSpec,
 )
-
 
 from ..layer import Attention
 
@@ -48,7 +46,6 @@ def create_chunked_local_attention_backend(
             # Explicit override in case the underlying builder specialized this getter.
             # @override omitted only because of mypy limitation due to type variable.
             return AttentionCGSupport.NEVER
-
 
         def build(
             self,

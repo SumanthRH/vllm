@@ -22,7 +22,6 @@ from vllm.config import (
     SpeculativeConfig,
     VllmConfig,
 )
-
 from vllm.config.load import LoadConfig
 from vllm.model_executor.models.llama import LlamaForCausalLM
 from vllm.platforms import current_platform
@@ -36,7 +35,6 @@ def _create_mtp_proposer(num_speculative_tokens: int) -> EagleProposer:
     model_config = ModelConfig(
         model=mimo_7b_dir, runner="generate", max_model_len=100, trust_remote_code=True
     )
-
 
     speculative_config = SpeculativeConfig(
         target_model_config=model_config,
@@ -63,7 +61,6 @@ def _create_mtp_proposer(num_speculative_tokens: int) -> EagleProposer:
 @mock.patch("vllm.v1.spec_decode.eagle.get_layers_from_vllm_config")
 @mock.patch("vllm.v1.spec_decode.eagle.get_model")
 def test_mtp_load_model_unified(mock_get_model, mock_get_layers, mock_get_pp_group):
-
     """Test MTP-specific model loading with unified model approach."""
 
     # Setup mocks
@@ -75,7 +72,6 @@ def test_mtp_load_model_unified(mock_get_model, mock_get_layers, mock_get_pp_gro
     mock_model.has_own_embed_tokens = False
     mock_model.has_own_lm_head = False
 
-
     target_attn_layers = {"target_attn_1": mock.MagicMock()}
     all_attn_layers = {**target_attn_layers, "draft_attn_1": mock.MagicMock()}
     target_indexer_layers: dict = {}
@@ -86,7 +82,6 @@ def test_mtp_load_model_unified(mock_get_model, mock_get_layers, mock_get_pp_gro
         target_indexer_layers,
         all_attn_layers,
         all_indexer_layers,
-
     ]
 
     mock_pp_group = mock.MagicMock()
@@ -193,7 +188,6 @@ def test_mtp_propose(num_speculative_tokens, monkeypatch):
         AttentionBackendEnum.FLASH_ATTN
     )
 
-
     attn_metadata_builder = attn_metadata_builder_cls(
         kv_cache_spec=create_standard_kv_cache_spec(proposer.vllm_config),
         layer_names=proposer.attn_layer_names,
@@ -214,7 +208,6 @@ def test_mtp_propose(num_speculative_tokens, monkeypatch):
         common_attn_metadata=common_attn_metadata,
         sampling_metadata=sampling_metadata,
     )
-
 
     # Verify the model was called correctly
     assert model_mock.called

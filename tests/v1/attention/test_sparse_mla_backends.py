@@ -25,7 +25,6 @@ from vllm.attention.ops import flashmla
 from vllm.model_executor.layers.linear import ColumnParallelLinear
 from vllm.utils.math_utils import cdiv
 from vllm.v1.attention.backends.mla.flashmla_sparse import FlashMLASparseBackend
-
 from vllm.v1.attention.backends.mla.indexer import split_prefill_chunks
 
 SPARSE_BACKEND_BATCH_SPECS = {
@@ -50,7 +49,6 @@ SPARSE_BACKEND_BATCH_SPECS["large_q_pure_prefill"] = BatchSpec(
 def _dequantize_fp8_ds_mla_entry(
     cache_slice: torch.Tensor, kv_lora_rank: int, rope_dim: int, dtype: torch.dtype
 ) -> tuple[torch.Tensor, torch.Tensor]:
-
     """Dequantize a single fp8_ds_mla cache entry back to latent + rope."""
 
     # The first kv_lora_rank bytes store FP8 latent values with one scale per
@@ -77,7 +75,6 @@ def _dequantize_fp8_ds_mla_entry(
 def _quantize_dequantize_fp8_ds_mla(
     kv_c: torch.Tensor, k_pe: torch.Tensor, block_size: int, scale: torch.Tensor
 ) -> tuple[torch.Tensor, torch.Tensor]:
-
     """Round-trip kv_c/k_pe though the fp8_ds_mla cache layout."""
 
     if kv_c.numel() == 0:
@@ -97,7 +94,6 @@ def _quantize_dequantize_fp8_ds_mla(
     ops.concat_and_cache_mla(
         kv_c, k_pe, tmp_cache, slot_mapping, kv_cache_dtype="fp8_ds_mla", scale=scale
     )
-
 
     dequant_kv_c = torch.empty_like(kv_c)
     dequant_k_pe = torch.empty_like(k_pe)
@@ -123,7 +119,6 @@ def _quantize_dequantize_fp8_ds_mla(
 def test_sparse_backend_decode_correctness(
     dist_init, batch_name, kv_cache_dtype, tensor_parallel_size
 ):
-
     if not torch.cuda.is_available():
         pytest.skip("CUDA is required for sparse MLA decode test")
 
@@ -179,7 +174,6 @@ def test_sparse_backend_decode_correctness(
     model_config.get_head_size = MethodType(lambda self: head_size, model_config)
     model_config.get_sliding_window = MethodType(lambda self: None, model_config)
 
-
     kv_cache_spec = create_standard_kv_cache_spec(vllm_config)
 
     torch.manual_seed(0)
@@ -191,7 +185,6 @@ def test_sparse_backend_decode_correctness(
         kv_lora_rank, num_heads, qk_nope_head_dim, dtype=dtype, device=device
     )
     W_UV = torch.randn(kv_lora_rank, num_heads, v_head_dim, dtype=dtype, device=device)
-
 
     # Build synthetic decode-only workload
     seq_lens = batch_spec.seq_lens
@@ -217,7 +210,6 @@ def test_sparse_backend_decode_correctness(
         )
         kv_c_full = torch.rand(s_len, kv_lora_rank, dtype=dtype, device=device)
         k_pe_full = torch.rand(s_len, 1, qk_rope_head_dim, dtype=dtype, device=device)
-
 
         kv_c_full, k_pe_full = _quantize_dequantize_fp8_ds_mla(
             kv_c_full,
@@ -257,7 +249,6 @@ def test_sparse_backend_decode_correctness(
         kv_c_contexts.append(kv_c_full[: ctx_len + 1])
         k_pe_contexts.append(k_pe_full[: ctx_len + 1])
 
-
     query_vllm = torch.cat(all_q_vllm, dim=0)
     kv_c_vllm = torch.cat(all_kv_c_vllm, dim=0)
     k_pe_vllm = torch.cat(all_k_pe_vllm, dim=0)
@@ -266,14 +257,12 @@ def test_sparse_backend_decode_correctness(
     vllm_config.cache_config.cache_dtype = kv_cache_dtype
     vllm_config.model_config.hf_config.index_topk = topk_tokens
 
-
     common_attn_metadata = create_common_attn_metadata(
         batch_spec,
         vllm_config.cache_config.block_size,
         device,
         arange_block_indices=True,
     )
-
 
     kv_cache = create_and_prepopulate_kv_cache(
         kv_c_contexts=kv_c_contexts,
@@ -358,7 +347,6 @@ def test_sparse_backend_decode_correctness(
         indexer=mock_indexer,
     )
 
-
     impl.process_weights_after_loading(dtype)
 
     layer = MockAttentionLayer(device)
@@ -377,13 +365,11 @@ def test_sparse_backend_decode_correctness(
             output=out_buffer,
         )
 
-
     assert backend_output.shape == sdpa_reference.shape
     assert backend_output.dtype == sdpa_reference.dtype
     assert torch.isfinite(backend_output).all()
 
     torch.testing.assert_close(backend_output, sdpa_reference, rtol=0.5, atol=0.5)
-
 
 
 @pytest.mark.parametrize(

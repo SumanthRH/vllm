@@ -41,19 +41,17 @@ from transformers.models.qwen2_vl.image_processing_qwen2_vl import (
 from transformers.models.qwen3_vl import Qwen3VLProcessor, Qwen3VLVideoProcessor
 from transformers.models.qwen3_vl.configuration_qwen3_vl import (
     Qwen3VLConfig,
-    Qwen3VLVisionConfig,
 )
 from transformers.models.qwen3_vl.video_processing_qwen3_vl import (
     smart_resize as video_smart_resize,
 )
-
 from transformers.video_utils import VideoMetadata
 
 from vllm.attention.backends.registry import AttentionBackendEnum
 from vllm.attention.layer import check_upstream_fa_availability
 from vllm.compilation.decorators import support_torch_compile
 from vllm.config import VllmConfig
-from vllm.config.multimodal import BaseDummyOptions, VideoDummyOptions
+from vllm.config.multimodal import VideoDummyOptions
 from vllm.distributed import get_pp_group
 from vllm.logger import init_logger
 from vllm.model_executor.layers.activation import _ACTIVATION_REGISTRY
@@ -64,16 +62,13 @@ from vllm.model_executor.layers.linear import (
 )
 from vllm.model_executor.layers.logits_processor import LogitsProcessor
 from vllm.model_executor.layers.quantization import QuantizationConfig
-from vllm.model_executor.layers.rotary_embedding import get_rope
 from vllm.model_executor.layers.vocab_parallel_embedding import ParallelLMHead
 from vllm.model_executor.model_loader.weight_utils import default_weight_loader
 from vllm.model_executor.models.module_mapping import MultiModelKeys
 from vllm.multimodal import MULTIMODAL_REGISTRY
 from vllm.multimodal.inputs import (
-    MultiModalDataDict,
     MultiModalFeatureSpec,
     MultiModalFieldConfig,
-    MultiModalKwargsItem,
     MultiModalKwargsItems,
     VideoItem,
 )
@@ -84,7 +79,6 @@ from vllm.multimodal.processing import (
     PromptUpdate,
     PromptUpdateDetails,
 )
-from vllm.multimodal.profiling import BaseDummyInputsBuilder
 from vllm.sequence import IntermediateTensors
 from vllm.utils.collection_utils import is_list_of
 
@@ -202,7 +196,6 @@ class Qwen3_VisionBlock(nn.Module):
         prefix: str = "",
         use_data_parallel: bool = False,
         attn_backend: AttentionBackendEnum = AttentionBackendEnum.TORCH_SDPA,
-
         use_upstream_fa: bool = False,
     ) -> None:
         super().__init__()
@@ -229,7 +222,6 @@ class Qwen3_VisionBlock(nn.Module):
             prefix=f"{prefix}.mlp",
             use_data_parallel=use_data_parallel,
         )
-
 
         self.merger = Qwen3_VisionPatchMerger(
             d_model=vision_config.out_hidden_size,
@@ -296,7 +288,6 @@ class Qwen3_VisionBlock(nn.Module):
                 for layer_idx in range(vision_config.depth)
             ]
         )
-
 
     @property
     def dtype(self) -> torch.dtype:
@@ -529,7 +520,6 @@ class Qwen3VLProcessingInfo(Qwen2VLProcessingInfo):
         num_frames: int = 2,
         do_resize: bool = True,
         image_processor: Qwen2VLImageProcessorFast | Qwen3VLVideoProcessor | None,
-
     ) -> tuple[ImageSize, int]:
         if image_processor is None and num_frames > 1:
             image_processor = self.get_video_processor()
@@ -550,7 +540,6 @@ class Qwen3VLProcessingInfo(Qwen2VLProcessingInfo):
                 extra_kwargs = {
                     "num_frames": num_frames,
                     "temporal_factor": temporal_patch_size,
-
                 }
             else:
                 smart_resize = image_smart_resize
@@ -583,7 +572,6 @@ class Qwen3VLProcessingInfo(Qwen2VLProcessingInfo):
             max_tokens, start_num_frames=start_num_frames
         )
 
-
     def get_num_frames_with_most_features(
         self,
         seq_len: int,
@@ -592,7 +580,6 @@ class Qwen3VLProcessingInfo(Qwen2VLProcessingInfo):
         return super().get_num_frames_with_most_features(
             seq_len, mm_counts, max_frames_per_video=_MAX_FRAMES_PER_VIDEO
         )
-
 
     def get_max_video_tokens(
         self,
@@ -604,7 +591,6 @@ class Qwen3VLProcessingInfo(Qwen2VLProcessingInfo):
             image_width=target_width,
             image_height=target_height,
             num_frames=self.get_num_frames_with_most_features(seq_len, mm_counts),
-
             image_processor=None,
         )
 
@@ -616,7 +602,6 @@ class Qwen3VLProcessingInfo(Qwen2VLProcessingInfo):
     def _calculate_timestamps(
         self, indices: list[int] | torch.Tensor, video_fps: float, merge_size: int
     ):
-
         target_video_size, _ = self.info._get_vision_info(
             image_width=target_width,
             image_height=target_height,
@@ -659,7 +644,6 @@ class Qwen3VLProcessingInfo(Qwen2VLProcessingInfo):
             "video": self._get_dummy_videos(
                 width=width,
                 height=height,
-
                 num_frames=target_num_frames,
                 num_videos=num_videos,
             ),
@@ -1049,7 +1033,6 @@ class Qwen3VLForConditionalGeneration(
             vllm_config=vllm_config, prefix=maybe_prefix(prefix, "language_model")
         )
 
-
         self.make_empty_intermediate_tensors = (
             self.language_model.make_empty_intermediate_tensors
         )
@@ -1067,7 +1050,6 @@ class Qwen3VLForConditionalGeneration(
                     vllm_config.scheduler_config.max_num_batched_tokens,
                     config.text_config.hidden_size,
                 )
-
                 for _ in range(self.deepstack_num_level)
             ]
         else:
@@ -1459,7 +1441,6 @@ class Qwen3VLForConditionalGeneration(
         return self.language_model.compute_logits(hidden_states)
 
     def load_weights(self, weights: Iterable[tuple[str, torch.Tensor]]) -> set[str]:
-
         skip_prefixes = []
         if self.visual is None:
             skip_prefixes.extend(["visual."])

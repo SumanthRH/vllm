@@ -32,7 +32,6 @@ from vllm.v1.attention.backends.utils import (
     AttentionMetadataBuilder,
     CommonAttentionMetadata,
 )
-
 from vllm.v1.kv_cache_interface import AttentionSpec
 
 if TYPE_CHECKING:
@@ -68,7 +67,6 @@ class FlashMLASparseBackend(AttentionBackend):
     def get_name() -> str:
         return "FLASHMLA_SPARSE"
 
-
     @staticmethod
     def get_builder_cls() -> type["FlashMLASparseMetadataBuilder"]:
         return FlashMLASparseMetadataBuilder
@@ -93,7 +91,6 @@ class FlashMLASparseBackend(AttentionBackend):
     def supports_compute_capability(cls, capability: DeviceCapability) -> bool:
         return capability.major in [9, 10]
 
-
     @staticmethod
     def get_kv_cache_shape(
         num_blocks: int,
@@ -108,7 +105,6 @@ class FlashMLASparseBackend(AttentionBackend):
             return (num_blocks, block_size, 656)
         else:
             return (num_blocks, block_size, head_size)
-
 
 
 @dataclass
@@ -135,7 +131,6 @@ class FlashMLASparseMetadata:
         cache_lens: torch.Tensor
 
     fp8_extra_metadata: FP8KernelMetadata | None = None
-
 
 
 @triton.jit
@@ -189,7 +184,6 @@ def _convert_req_index_to_global_index_kernel(
         is_invalid_tok | (~valid_block), -1, base * BLOCK_SIZE + inblock_off
     )
 
-
     # Store results
     out_ptr_ij = out_ptr + token_id * out_stride0 + indice_id * out_stride1
     tl.store(out_ptr_ij, out_val)
@@ -222,7 +216,6 @@ def triton_convert_req_index_to_global_index(
     assert NUM_TOPK_TOKENS % BLOCK_N == 0, (
         f"NUM_TOPK_TOKENS ({NUM_TOPK_TOKENS}) must be divisible byBLOCK_N ({BLOCK_N})"
     )
-
 
     num_tokens = req_id.shape[0]
     num_requests, max_num_blocks_per_req = block_table.shape
@@ -273,7 +266,6 @@ class FlashMLASparseMetadataBuilder(AttentionMetadataBuilder[FlashMLASparseMetad
         vllm_config: VllmConfig,
         device: torch.device,
     ):
-
         cache_config = vllm_config.cache_config
         self.kv_cache_spec = kv_cache_spec
         self.model_config = vllm_config.model_config
@@ -297,7 +289,6 @@ class FlashMLASparseMetadataBuilder(AttentionMetadataBuilder[FlashMLASparseMetad
         self.dummy_block_table = torch.empty(
             (1, 1), dtype=torch.int32, device=self.device
         )
-
 
         # Equation taken from FlashMLA/csrc/pybind.cpp
         h_q, h_k = self.num_heads, 1
@@ -380,7 +371,6 @@ class FlashMLASparseMetadataBuilder(AttentionMetadataBuilder[FlashMLASparseMetad
                 dummy_block_table=self.dummy_block_table,
             )
 
-
         metadata = FlashMLASparseMetadata(
             num_reqs=common_attn_metadata.num_reqs,
             max_query_len=common_attn_metadata.max_query_len,
@@ -445,7 +435,6 @@ class FlashMLASparseImpl(MLACommonBaseImpl[FlashMLASparseMetadata]):
             -1, 1, kv_c_and_k_pe_cache.shape[-1]
         )
 
-
         # NOTE(Chen): kernel requires num_local_head to be a multiple of
         # 64 on hopper and 128 on blackwell
         if self.num_heads % self.padding != 0:
@@ -472,7 +461,6 @@ class FlashMLASparseImpl(MLACommonBaseImpl[FlashMLASparseMetadata]):
         topk_indices: torch.Tensor,
         attn_metadata: FlashMLASparseMetadata,
     ) -> torch.Tensor:
-
         assert attn_metadata.fp8_extra_metadata is not None
         extra_metadata = attn_metadata.fp8_extra_metadata
 
@@ -502,7 +490,6 @@ class FlashMLASparseImpl(MLACommonBaseImpl[FlashMLASparseMetadata]):
         output: torch.Tensor | None = None,
         output_scale: torch.Tensor | None = None,
         output_block_scale: torch.Tensor | None = None,
-
     ) -> torch.Tensor:
         # NOTE(lucas): for the sparse FlashMLA kernels the kernels want to use
         # MQA 576/512 approach for both prefill and decode
@@ -513,7 +500,6 @@ class FlashMLASparseImpl(MLACommonBaseImpl[FlashMLASparseMetadata]):
             raise NotImplementedError(
                 "fused output quantization is not yet supported for MLACommonImpl"
             )
-
 
         if attn_metadata is None:
             # The zero fill is required when used with DP + EP
@@ -570,7 +556,6 @@ class FlashMLASparseImpl(MLACommonBaseImpl[FlashMLASparseMetadata]):
             attn_out = self._forward_fp8_kv(
                 q, kv_cache, topk_indices_global, attn_metadata
             )
-
 
         self._v_up_proj(attn_out, out=output[:num_actual_toks])
         return output

@@ -40,7 +40,6 @@ from vllm.distributed import (
     get_tensor_model_parallel_world_size,
     tensor_model_parallel_all_gather,
 )
-
 from vllm.logger import init_logger
 from vllm.model_executor.layers.activation import SiluAndMul
 from vllm.model_executor.layers.fused_moe import FusedMoE
@@ -63,7 +62,6 @@ from vllm.model_executor.model_loader.weight_utils import (
     default_weight_loader,
     maybe_remap_kv_scale_name,
 )
-
 from vllm.model_executor.models.utils import sequence_parallel_chunk
 from vllm.sequence import IntermediateTensors
 
@@ -177,7 +175,6 @@ class Qwen3MoeSparseMoeBlock(nn.Module):
             routing_method_type=RoutingMethodType.Renormalize,
         )
 
-
         self.gate = ReplicatedLinear(
             config.hidden_size,
             config.num_experts,
@@ -211,12 +208,14 @@ class Qwen3MoeSparseMoeBlock(nn.Module):
 
         if self.is_sequence_parallel:
             final_hidden_states = tensor_model_parallel_all_gather(
-                final_hidden_states, 0)
+                final_hidden_states, 0
+            )
             final_hidden_states = final_hidden_states[:num_tokens]
 
         if self.is_sequence_parallel:
             final_hidden_states = tensor_model_parallel_all_gather(
-                final_hidden_states, 0)
+                final_hidden_states, 0
+            )
             final_hidden_states = final_hidden_states[:num_tokens]
 
         # return to 1d if input is 1d
@@ -328,7 +327,6 @@ class Qwen3MoeAttention(nn.Module):
 
 
 class Qwen3MoeDecoderLayer(nn.Module):
-
     def __init__(self, vllm_config: VllmConfig, prefix: str = "") -> None:
         super().__init__()
 
@@ -427,7 +425,6 @@ class Qwen3MoeModel(nn.Module):
         self.start_layer, self.end_layer, self.layers = make_layers(
             config.num_hidden_layers,
             lambda prefix: Qwen3MoeDecoderLayer(vllm_config=vllm_config, prefix=prefix),
-
             prefix=f"{prefix}.layers",
         )
         self.norm = RMSNorm(config.hidden_size, eps=config.rms_norm_eps)

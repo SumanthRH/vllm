@@ -18,7 +18,6 @@ from vllm.utils.import_utils import has_deep_gemm
 from vllm.utils.math_utils import cdiv
 
 
-
 def kv_cache_cast_to_fp8(x: torch.Tensor) -> torch.Tensor:
     # x: (num_blocks, block_size, 1, head_dim)
     num_blocks, block_size, num_heads, head_dim = x.shape
@@ -44,7 +43,6 @@ def kv_cache_cast_to_fp8(x: torch.Tensor) -> torch.Tensor:
 def per_custom_dims_cast_to_fp8(
     x: torch.Tensor, dims: tuple, use_ue8m0: bool
 ) -> tuple[torch.Tensor, torch.Tensor]:
-
     excluded_dims = tuple([i for i in range(x.dim()) if i not in set(dims)])
     x_amax = x.abs().float().amax(dim=excluded_dims, keepdim=True).clamp(1e-4)
     sf = x_amax / 448.0
@@ -99,14 +97,12 @@ def _ref_fp8_mqa_logits(
 @pytest.mark.skipif(
     not current_platform.has_device_capability(90), reason="SM90 and SM100 only"
 )
-
 def test_deepgemm_fp8_mqa_logits():
     torch.manual_seed(0)
     random.seed(0)
     num_heads, head_dim = 32, 128
     for seq_len in (512,):
         for seq_len_kv in (1024,):
-
             for disable_cp in (False, True):
                 q = torch.randn(
                     seq_len,
@@ -194,7 +190,6 @@ def _ref_fp8_paged_mqa_logits(
                 (qx.transpose(0, 1) @ kx.transpose(0, 1).transpose(1, 2)).to(
                     logits.dtype
                 ),
-
                 float("-inf"),
             )
             s = torch.relu(s) * weight_slice[..., None]
@@ -212,7 +207,6 @@ def _ref_fp8_paged_mqa_logits(
 @pytest.mark.skipif(
     not current_platform.has_device_capability(90), reason="SM90 and SM100 only"
 )
-
 def test_deepgemm_fp8_paged_mqa_logits():
     torch.manual_seed(0)
     random.seed(0)
@@ -221,7 +215,6 @@ def test_deepgemm_fp8_paged_mqa_logits():
     for batch_size, next_n in [(4, 1), (2, 2)]:
         for heads, index_dim in [(32, 128)]:
             for avg_kv in (2048,):
-
                 num_blocks, blocksize = max_model_len * 2, 64
 
                 q = torch.randn(
@@ -302,7 +295,6 @@ def test_deepgemm_fp8_paged_mqa_logits():
                 mask = positions <= (
                     context_lens[row_indices] - next_n + next_n_offset
                 ).unsqueeze(1)
-
 
                 logits = logits.masked_fill(~mask, 0)
                 ref_logits = ref_logits.masked_fill(~mask, 0)

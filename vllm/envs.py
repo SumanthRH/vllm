@@ -736,7 +736,6 @@ environment_variables: dict[str, Callable[[], Any]] = {
     "VLLM_MEDIA_URL_ALLOW_REDIRECTS": lambda: bool(
         int(os.getenv("VLLM_MEDIA_URL_ALLOW_REDIRECTS", "1"))
     ),
-
     # Max number of workers for the thread pool handling
     # media bytes loading. Set to 1 to disable parallel processing.
     # Default is 8

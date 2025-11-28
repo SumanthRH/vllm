@@ -139,7 +139,6 @@ class Glm4DecoderLayer(nn.Module):
         prefix: str = "",
         config: Glm4Config | None = None,
     ) -> None:
-
         super().__init__()
 
         config = config or vllm_config.model_config.hf_config

@@ -37,7 +37,6 @@ class LlamaDecoderLayer(LlamaDecoderLayer):
         disable_input_layernorm: bool,
         prefix: str = "",
         config: LlamaConfig | None = None,
-
     ) -> None:
         super().__init__(vllm_config, prefix=prefix, config=config)
 
@@ -97,7 +96,6 @@ class LlamaModel(nn.Module):
 
     def embed_input_ids(self, input_ids: torch.Tensor) -> torch.Tensor:
         return self.embed_tokens(input_ids)
-
 
     def forward(
         self,

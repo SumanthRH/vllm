@@ -2,7 +2,6 @@
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 import contextlib
 import copy
-import logging
 import math
 import queue
 import threading
@@ -129,7 +128,6 @@ class NixlConnectorMetadata(KVConnectorMetadata):
         self.reqs_to_send: dict[ReqId, float] = {}
         self.reqs_in_batch: set[ReqId] = set()
         self.reqs_not_processed: set[ReqId] = set()
-
 
     def add_new_req(
         self,
@@ -463,7 +461,6 @@ class NixlConnectorScheduler:
                     logger.warning("Connection listener got unexpected message %s", msg)
                 sock.send_multipart((identity, b"", encoded_data[target_tp_rank]))
 
-
     def get_num_new_matched_tokens(
         self, request: "Request", num_computed_tokens: int
     ) -> tuple[int, bool]:
@@ -590,7 +587,6 @@ class NixlConnectorScheduler:
         meta.reqs_to_send = self._reqs_need_send
         meta.reqs_in_batch = self._reqs_in_batch
         meta.reqs_not_processed = self._reqs_not_processed
-
 
         # Clear the list once workers start the transfers
         self._reqs_need_recv.clear()
@@ -834,7 +830,6 @@ class NixlConnectorWorker:
                 if len(non_ucx_backends) > 0
                 else nixl_agent_config(num_threads=num_threads, capture_telemetry=True)
             )
-
 
         self.nixl_wrapper = NixlWrapper(str(uuid.uuid4()), config)
         # Map of engine_id -> {rank0: agent_name0, rank1: agent_name1..}.
@@ -1264,7 +1259,6 @@ class NixlConnectorWorker:
         self.device_kv_caches = kv_caches
         self.dst_num_blocks[self.engine_id] = self.num_blocks
         if self.kv_topo.is_kv_layout_blocks_first:
-
             for i in range(len(self.slot_size_per_layer)):
                 assert self.slot_size_per_layer[i] % 2 == 0
                 self.slot_size_per_layer[i] //= 2
@@ -1282,7 +1276,6 @@ class NixlConnectorWorker:
         self.src_xfer_side_handle = self.register_local_xfer_handler(self.block_size)
 
         self.src_xfer_side_handles[self.block_size] = self.src_xfer_side_handle
-
 
         # TODO(mgoin): Hybrid memory allocator is currently disabled for
         # models with local attention (Llama 4). Can remove this once enabled.
@@ -1463,7 +1456,6 @@ class NixlConnectorWorker:
         # 1 when P and D `--tensor-parallel-size` match.
         tp_ratio = self.kv_topo.tp_ratio_from_engine_id(engine_id)
 
-
         ### Register remote agent memory regions
         blocks_data = []
         # With homogeneous TP, D pulls the whole kv cache from corresponding
@@ -1523,7 +1515,6 @@ class NixlConnectorWorker:
                     req_id not in self._reqs_to_send
                     and req_id not in self._reqs_to_process
                 ):
-
                     logger.error(
                         "Potentially invalid KV blocks for "
                         "unrecognized request %s were retrieved by "
@@ -1634,7 +1625,6 @@ class NixlConnectorWorker:
             self._reqs_to_process.discard(req_id)
             # We should never get an abort after setting an expiry timer
             assert req_id not in self._reqs_to_send
-
 
         # Add to requests that are waiting to be read and track expiration.
         for req_id, expiration_time in metadata.reqs_to_send.items():
@@ -1887,7 +1877,6 @@ class NixlConnectorWorker:
         return BlockTable.map_to_kernel_blocks(
             block_ids_np, self._physical_blocks_per_logical_kv_block, block_arange
         ).tolist()
-
 
     def get_backend_aware_kv_block_len(self, layer_idx: int):
         """

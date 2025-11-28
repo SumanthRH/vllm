@@ -275,13 +275,11 @@ class LlamaDecoderLayer(nn.Module):
         prefix: str = "",
         config: LlamaConfig | None = None,
     ) -> None:
-
         super().__init__()
 
         config = config or vllm_config.model_config.hf_config
         cache_config = vllm_config.cache_config
         quant_config = self.get_quant_config(vllm_config)
-
 
         self.hidden_size = config.hidden_size
         max_position_embeddings = getattr(config, "max_position_embeddings", 8192)

@@ -20,7 +20,6 @@ from vllm.v1.attention.backends.utils import (
     split_decodes_and_prefills,
 )
 
-
 logger = init_logger(__name__)
 
 
@@ -28,7 +27,6 @@ class DeepseekV32IndexerBackend(AttentionBackend):
     @staticmethod
     def get_supported_kernel_block_sizes() -> list[int | MultipleOf]:
         return [1 if current_platform.is_rocm() else 64]
-
 
     @classmethod
     def get_supported_head_sizes(cls) -> list[int]:
@@ -87,7 +85,6 @@ class DeepSeekV32IndexerDecodeMetadata:
 
 @dataclass
 class DeepseekV32IndexerMetadata:
-
     # FIXME (zyongye)
     # hacky way to access the data now, need to be in chunked meta
     seq_lens: torch.Tensor
@@ -111,7 +108,6 @@ class DeepseekV32IndexerMetadata:
 
     decode: DeepSeekV32IndexerDecodeMetadata | None = None
     prefill: DeepseekV32IndexerPrefillMetadata | None = None
-
 
 
 # TODO (zyongye) optimize this, this is now vibe coded
@@ -157,7 +153,6 @@ def kv_spans_from_batches(
             torch.empty(0, dtype=torch.long, device=device),
         )
 
-
     # KV start offsets per batch in the concatenated KV cache
     kv_starts_per_batch = torch.cumsum(L, dim=0) - L  # [B]
 
@@ -176,7 +171,6 @@ def kv_spans_from_batches(
         torch.arange(N, dtype=torch.long) - torch.repeat_interleave(q[:-1], counts) + 1
     )
 
-
     local_pos = L_expand - m_expand + pos_within  # [N], 1-based
     end_location = start_tensor + local_pos  # exclusive end
 
@@ -193,7 +187,6 @@ def get_max_prefill_buffer_size(vllm_config: VllmConfig):
 def split_prefill_chunks(
     seq_lens_cpu: torch.Tensor, max_prefill_buffer_size: int, reqs_start: int
 ) -> list[tuple[int, int]]:
-
     """
     Split the prefill chunks into a list of tuples of (reqs_start, reqs_end)
     such that the total sequence length of each chunk is less than the
@@ -227,7 +220,6 @@ class DeepseekV32IndexerMetadataBuilder(AttentionMetadataBuilder):
     _cudagraph_support: ClassVar[AttentionCGSupport] = (
         AttentionCGSupport.UNIFORM_SINGLE_TOKEN_DECODE
     )
-
 
     reorder_batch_threshold: int = 1
 
@@ -301,7 +293,6 @@ class DeepseekV32IndexerMetadataBuilder(AttentionMetadataBuilder):
         common_attn_metadata: CommonAttentionMetadata,
         fast_build: bool = False,
     ) -> DeepseekV32IndexerMetadata:
-
         num_reqs = common_attn_metadata.num_reqs
         num_tokens = common_attn_metadata.num_actual_tokens
 
@@ -311,7 +302,6 @@ class DeepseekV32IndexerMetadataBuilder(AttentionMetadataBuilder):
                 common_attn_metadata, decode_threshold=self.reorder_batch_threshold
             )
         )
-
 
         assert num_decodes + num_prefills == num_reqs
         assert num_decode_tokens + num_prefill_tokens == num_tokens
@@ -358,7 +348,6 @@ class DeepseekV32IndexerMetadataBuilder(AttentionMetadataBuilder):
                 )
             decode_metadata = DeepSeekV32IndexerDecodeMetadata(
                 block_table=common_attn_metadata.block_table_tensor[:num_decodes, ...],
-
                 seq_lens=common_attn_metadata.seq_lens[:num_decodes],
                 decode_lens=decode_lens,
                 requires_padding=requires_padding,
