@@ -44,7 +44,11 @@ class MockModelConfig:
     logits_processor_pattern: str | None = None
     diff_sampling_param: dict | None = None
     allowed_local_media_path: str = ""
+<<<<<<< HEAD
     allowed_media_domains: list[str] | None = None
+=======
+    allowed_media_domains: Optional[list[str]] = None
+>>>>>>> upstream/releases/v0.11.0
     encoder_config = None
     generation_config: str = "auto"
     skip_tokenizer_init: bool = False
