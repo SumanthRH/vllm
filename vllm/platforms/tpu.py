@@ -24,6 +24,8 @@ else:
 
 logger = init_logger(__name__)
 
+USE_TPU_COMMONS = False
+
 
 class TpuPlatform(Platform):
     _enum = PlatformEnum.TPU
@@ -47,9 +49,11 @@ class TpuPlatform(Platform):
     def get_attn_backend_cls(cls, selected_backend: _Backend, head_size: int,
                              dtype: torch.dtype, kv_cache_dtype: Optional[str],
                              block_size: int, use_v1: bool, use_mla: bool,
-                             has_sink) -> str:
-        if (selected_backend != _Backend.PALLAS
-                and selected_backend != _Backend.PALLAS_VLLM_V1):
+                             has_sink, use_sparse) -> str:
+        if use_sparse:
+            raise NotImplementedError(
+                "Sparse Attention is not supported on TPU.")
+        if selected_backend != _Backend.PALLAS:
             logger.info("Cannot use %s backend on TPU.", selected_backend)
 
         if not use_v1:
@@ -72,10 +76,6 @@ class TpuPlatform(Platform):
     @classmethod
     def get_device_total_memory(cls, device_id: int = 0) -> int:
         raise NotImplementedError
-
-    @classmethod
-    def is_async_output_supported(cls, enforce_eager: Optional[bool]) -> bool:
-        return False
 
     @classmethod
     def get_punica_wrapper(cls) -> str:
@@ -177,11 +177,6 @@ class TpuPlatform(Platform):
         return True
 
     @classmethod
-    def supports_v1(cls, model_config: ModelConfig) -> bool:
-        # V1 support on TPU is experimental
-        return True
-
-    @classmethod
     def validate_request(
         cls,
         prompt: PromptType,
@@ -194,13 +189,45 @@ class TpuPlatform(Platform):
             raise ValueError("Torch XLA does not support per-request seed.")
 
     @classmethod
-    def is_kv_cache_dtype_supported(cls, kv_cache_dtype: str) -> bool:
+    def is_kv_cache_dtype_supported(cls, kv_cache_dtype: str,
+                                    model_config: "ModelConfig") -> bool:
+        return True
+
+    @classmethod
+    @torch.compile(backend="openxla")
+    def insert_blocks_to_device(
+        cls,
+        src_cache: torch.Tensor,
+        dst_cache: torch.Tensor,
+        src_block_indices: torch.Tensor,
+        dst_block_indices: torch.Tensor,
+    ) -> None:
+        torch.ops.xla.dynamo_set_buffer_donor_(dst_cache, True)
+        dst_cache[dst_block_indices] = src_cache[src_block_indices].to(
+            dst_cache.device)
+
+    @classmethod
+    @torch.compile(backend="openxla")
+    def swap_out_blocks_to_host(
+        cls,
+        src_cache: torch.Tensor,
+        dst_cache: torch.Tensor,
+        src_block_indices: torch.Tensor,
+        dst_block_indices: torch.Tensor,
+    ) -> None:
+        """ tpu blocks to cpu blocks"""
+        torch.ops.xla.dynamo_set_buffer_donor_(src_cache, True)
+        dst_cache[dst_block_indices] = src_cache[src_block_indices].cpu()
+
+    @classmethod
+    def use_sync_weight_loader(cls) -> bool:
         return True
 
 
 try:
     from tpu_commons.platforms import TpuPlatform as TpuCommonsPlatform
     TpuPlatform = TpuCommonsPlatform  # type: ignore
+    USE_TPU_COMMONS = True
 except ImportError:
     logger.info("tpu_commons not found, using vLLM's TpuPlatform")
     pass

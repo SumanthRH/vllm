@@ -19,9 +19,7 @@ from typing_extensions import deprecated
 
 import vllm.envs as envs
 from vllm.connections import HTTPConnection, global_http_connection
-from vllm.distributed import (get_tensor_model_parallel_rank,
-                              get_tensor_model_parallel_world_size,
-                              tensor_model_parallel_all_gather)
+from vllm.utils.jsontree import json_map_leaves
 
 from .audio import AudioMediaIO
 from .base import MediaIO
@@ -31,12 +29,10 @@ from .video import VideoMediaIO
 _M = TypeVar("_M")
 
 if TYPE_CHECKING:
-    from .inputs import (BatchedTensorInputs, MultiModalKwargs,
-                         MultiModalKwargsItem, MultiModalKwargsItems,
-                         MultiModalPlaceholderDict)
+    from .inputs import (BatchedTensorInputs, MultiModalKwargsItem,
+                         MultiModalKwargsItems, MultiModalPlaceholderDict)
 else:
     BatchedTensorInputs = Any
-    MultiModalKwargs = Any
     MultiModalKwargsItem = Any
     MultiModalKwargsItems = Any
     MultiModalPlaceholderDict = Any
@@ -54,6 +50,7 @@ class MediaConnector:
         connection: HTTPConnection = global_http_connection,
         *,
         allowed_local_media_path: str = "",
+        allowed_media_domains: Optional[list[str]] = None,
     ) -> None:
         """
         Args:
@@ -86,12 +83,15 @@ class MediaConnector:
             allowed_local_media_path_ = None
 
         self.allowed_local_media_path = allowed_local_media_path_
+        if allowed_media_domains is None:
+            allowed_media_domains = []
+        self.allowed_media_domains = allowed_media_domains
 
     def _load_data_url(
         self,
         url_spec: ParseResult,
         media_io: MediaIO[_M],
-    ) -> _M:
+    ) -> _M:  # type: ignore[type-var]
         data_spec, data = url_spec.path.split(",", 1)
         media_type, data_type = data_spec.split(";", 1)
 
@@ -105,7 +105,7 @@ class MediaConnector:
         self,
         url_spec: ParseResult,
         media_io: MediaIO[_M],
-    ) -> _M:
+    ) -> _M:  # type: ignore[type-var]
         allowed_local_media_path = self.allowed_local_media_path
         if allowed_local_media_path is None:
             raise RuntimeError("Cannot load local files without "
@@ -119,18 +119,32 @@ class MediaConnector:
 
         return media_io.load_file(filepath)
 
+    def _assert_url_in_allowed_media_domains(self, url_spec) -> None:
+        if self.allowed_media_domains and url_spec.hostname not in \
+            self.allowed_media_domains:
+            raise ValueError(
+                f"The URL must be from one of the allowed domains: "
+                f"{self.allowed_media_domains}. Input URL domain: "
+                f"{url_spec.hostname}")
+
     def load_from_url(
         self,
         url: str,
         media_io: MediaIO[_M],
         *,
         fetch_timeout: Optional[int] = None,
-    ) -> _M:
+    ) -> _M:  # type: ignore[type-var]
         url_spec = urlparse(url)
 
         if url_spec.scheme.startswith("http"):
+            self._assert_url_in_allowed_media_domains(url_spec)
+
             connection = self.connection
-            data = connection.get_bytes(url, timeout=fetch_timeout)
+            data = connection.get_bytes(
+                url,
+                timeout=fetch_timeout,
+                allow_redirects=envs.VLLM_MEDIA_URL_ALLOW_REDIRECTS,
+            )
 
             return media_io.load_bytes(data)
 
@@ -154,8 +168,14 @@ class MediaConnector:
         loop = asyncio.get_running_loop()
 
         if url_spec.scheme.startswith("http"):
+            self._assert_url_in_allowed_media_domains(url_spec)
+
             connection = self.connection
-            data = await connection.async_get_bytes(url, timeout=fetch_timeout)
+            data = await connection.async_get_bytes(
+                url,
+                timeout=fetch_timeout,
+                allow_redirects=envs.VLLM_MEDIA_URL_ALLOW_REDIRECTS,
+            )
             future = loop.run_in_executor(global_thread_pool,
                                           media_io.load_bytes, data)
             return await future
@@ -211,7 +231,7 @@ class MediaConnector:
         image_mode: str = "RGB",
     ) -> Image.Image:
         """
-        Load a PIL image from a HTTP or base64 data URL.
+        Load a PIL image from an HTTP or base64 data URL.
 
         By default, the image is converted into RGB format.
         """
@@ -235,7 +255,7 @@ class MediaConnector:
         image_mode: str = "RGB",
     ) -> Image.Image:
         """
-        Asynchronously load a PIL image from a HTTP or base64 data URL.
+        Asynchronously load a PIL image from an HTTP or base64 data URL.
 
         By default, the image is converted into RGB format.
         """
@@ -259,7 +279,7 @@ class MediaConnector:
         image_mode: str = "RGB",
     ) -> tuple[npt.NDArray, dict[str, Any]]:
         """
-        Load video from a HTTP or base64 data URL.
+        Load video from an HTTP or base64 data URL.
         """
         image_io = ImageMediaIO(image_mode=image_mode,
                                 **self.media_io_kwargs.get("image", {}))
@@ -279,7 +299,7 @@ class MediaConnector:
         image_mode: str = "RGB",
     ) -> tuple[npt.NDArray, dict[str, Any]]:
         """
-        Asynchronously load video from a HTTP or base64 data URL.
+        Asynchronously load video from an HTTP or base64 data URL.
 
         By default, the image is converted into RGB format.
         """
@@ -308,7 +328,7 @@ class MediaConnector:
 
 def encode_audio_base64(
     audio: np.ndarray,
-    sampling_rate: float,
+    sampling_rate: int,
 ) -> str:
     """Encode audio as base64."""
     audio_io = AudioMediaIO()
@@ -368,7 +388,7 @@ def group_mm_inputs_by_modality(
 
     def modality_group_func(
             mm_input: MultiModalKwargsItems) -> Union[str, int]:
-        # If the input has multiple modalities, return a id as the unique key
+        # If the input has multiple modalities, return an id as the unique key
         # for the mm_input input.
         if len(mm_input) > 1:
             return id(mm_input)
@@ -376,10 +396,7 @@ def group_mm_inputs_by_modality(
         elif len(mm_input) == 1:
             return next(iter(mm_input.keys()))
 
-        # FIXME(Isotr0py): Modality of mm_input from legacy pipeline is empty,
-        # this is used to make InternVL with legacy pipeline still work with v1.
-        else:
-            return ""
+        raise AssertionError("This line should be unreachable.")
 
     return [
         list(group) for _, group in groupby(mm_inputs, key=modality_group_func)
@@ -391,12 +408,15 @@ def group_mm_kwargs_by_modality(
     *,
     device: torch.types.Device = None,
     pin_memory: bool = False,
+    merge_by_field_config: bool = False,
 ) -> Iterable[tuple[str, int, BatchedTensorInputs]]:
     """Group consecutive `MultiModalKwargsItem`s from `mm_kwargs` with the same
     modality together into the same `MultiModalKwargs` instance.
 
     Args:
-        mm_inputs: List of `MultiModalKwargsItem`.
+        mm_kwargs: List of `MultiModalKwargsItem`.
+        device: The device to place the grouped tensors on.
+        pin_memory: Whether to pin memory for faster host-to-device transfer.
 
     Yields:
         A tuple `(modality, num_items, grouped_kwargs)`.
@@ -406,63 +426,33 @@ def group_mm_kwargs_by_modality(
     for modality, items in groupby(mm_kwargs, key=lambda item: item.modality):
         items_lst = list(items)
 
-        # mm_kwargs_group = MultiModalKwargsItems.from_items(items_lst) \
-        #    .get_data(pin_memory=pin_memory)
-
-        # if device is not None:
-        #     mm_kwargs_group = json_map_leaves(
-        #         lambda x: x.to(device=device),
-        #         mm_kwargs_group,
-        #     )
-
-        # TODO: Once V0 is removed, we can use the merging logic above
+        # TODO: Enable `merge_by_field_config` for all models
         # to avoid creating an extra batch dimension (except for fields
         # that are meant to be stacked anyway).
         # We will also need to update each model to remove `flatten_bn`.
-        mm_kwargs_group = MultiModalKwargs.as_kwargs(
-            MultiModalKwargs.batch(
-                [
-                    MultiModalKwargsItems.from_seq([item]).get_data()
-                    for item in items_lst
-                ],
-                pin_memory=pin_memory,
-            ),
-            device=device,
-        )
+        if merge_by_field_config:
+            mm_kwargs_group: BatchedTensorInputs = dict(
+                MultiModalKwargsItems.from_seq(items_lst).get_data(
+                    pin_memory=pin_memory))
+
+            if device is not None:
+                mm_kwargs_group = json_map_leaves(
+                    lambda x: x.to(device=device),
+                    mm_kwargs_group,
+                )
+        else:
+            mm_kwargs_group = MultiModalKwargs.as_kwargs(
+                MultiModalKwargs.batch(
+                    [
+                        MultiModalKwargsItems.from_seq([item]).get_data()
+                        for item in items_lst
+                    ],
+                    pin_memory=pin_memory,
+                ),
+                device=device,
+            )
 
         yield modality, len(items_lst), mm_kwargs_group
-
-
-def run_dp_sharded_vision_model(image_input: torch.Tensor,
-                                vision_model: torch.nn.Module) -> torch.Tensor:
-    """Run a vision model with data parallelism (DP) sharding. The function 
-    will shard the input image tensor on the first dimension and run the vision
-    model
-
-    Args:
-        image_input (torch.Tensor): Image input tensor.
-        vision_model (torch.nn.Module): Vision model.
-
-    Returns:
-        torch.Tensor: Output image embeddings
-    """
-
-    num_chunks = image_input.shape[0]
-    mp_world_size = get_tensor_model_parallel_world_size()
-    num_chunks_per_rank = (num_chunks + mp_world_size - 1) // mp_world_size
-    num_padded_chunks = num_chunks_per_rank * mp_world_size - num_chunks
-    pad = (0, ) * (2 * (image_input.dim() - 1)) + (0, num_padded_chunks)
-    image_input_padded = torch.nn.functional.pad(image_input, pad)
-    rank = get_tensor_model_parallel_rank()
-    image_input_per_rank = image_input_padded[rank *
-                                              num_chunks_per_rank:(rank + 1) *
-                                              num_chunks_per_rank, ...]
-
-    vision_embeddings = vision_model(image_input_per_rank)
-    vision_embeddings = tensor_model_parallel_all_gather(vision_embeddings,
-                                                         dim=0)
-    vision_embeddings = vision_embeddings[:num_chunks, ...]
-    return vision_embeddings
 
 
 def fetch_audio(
