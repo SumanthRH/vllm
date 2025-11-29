@@ -468,15 +468,13 @@ class HybridAttentionMambaModelConfig(VerifyAndUpdateConfig):
             )
 
 
-class DeepseekV32ForCausalLM(VerifyAndUpdateConfig):
+class DeepseekV3ForCausalLM(VerifyAndUpdateConfig):
     @classmethod
     def verify_and_update_config(cls, vllm_config: "VllmConfig") -> None:
         """
-        Updated fp8 cache to custom "fp8_ds_mla" format for DeepSeekV32
+        Updated fp8 cache to custom "fp8_ds_mla" format for DeepSeekV3.2
         """
         hf_config = vllm_config.model_config.hf_config
-
-        is_v32 = hasattr(hf_config, "index_topk")
 
         # For DeepSeekV3.2, a custom fp8 format is used when fp8 kv-cache is enabled.
         cache_config = vllm_config.cache_config

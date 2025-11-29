@@ -57,14 +57,20 @@ class DeepseekV32IndexerBackend(AttentionBackend):
 
 
 @dataclass
-class DeepseekV32IndexerPrefillMetadata:
+class DeepseekV32IndexerPrefillChunkMetadata:
     block_table: torch.Tensor
-    query_start_loc: torch.Tensor
-    max_query_len: int
     cu_seqlen_ks: torch.Tensor
     cu_seqlen_ke: torch.Tensor
     cu_seq_lens: torch.Tensor
     total_seq_lens: int
+    token_start: int
+    token_end: int
+    num_reqs: int
+
+
+@dataclass
+class DeepseekV32IndexerPrefillMetadata:
+    chunks: list[DeepseekV32IndexerPrefillChunkMetadata]
 
 
 @dataclass
