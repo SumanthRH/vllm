@@ -474,8 +474,6 @@ class DeepseekV3ForCausalLM(VerifyAndUpdateConfig):
         """
         Updated fp8 cache to custom "fp8_ds_mla" format for DeepSeekV3.2
         """
-        hf_config = vllm_config.model_config.hf_config
-
         # For DeepSeekV3.2, a custom fp8 format is used when fp8 kv-cache is enabled.
         cache_config = vllm_config.cache_config
         if cache_config.cache_dtype.startswith("fp8"):
