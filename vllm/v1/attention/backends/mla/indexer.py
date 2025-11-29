@@ -149,8 +149,7 @@ def kv_spans_from_batches(
     kv_starts_per_batch = torch.cumsum(L, dim=0) - L  # [B]
 
     # For each selected token, which batch does it belong to?
-    batch_id = torch.repeat_interleave(torch.arange(B, device=device),
-                                       counts)  # [N]
+    batch_id = torch.repeat_interleave(torch.arange(B, device=device), counts)  # [N]
 
     # Map batch KV start to each token
     start_tensor = kv_starts_per_batch[batch_id]  # [N]
