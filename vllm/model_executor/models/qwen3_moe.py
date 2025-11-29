@@ -126,11 +126,7 @@ class Qwen3MoeSparseMoeBlock(nn.Module):
     ):
         super().__init__()
 
-<<<<<<< HEAD
-        config = vllm_config.model_config.hf_text_config
-=======
         config = vllm_config.model_config.hf_config
->>>>>>> a5354b3ed ([Bugfix][WideEP] Apply TP Attn + EP MoE fix to other models (#24982))
         parallel_config = vllm_config.parallel_config
         quant_config = vllm_config.quant_config
 
@@ -322,11 +318,7 @@ class Qwen3MoeDecoderLayer(nn.Module):
     def __init__(self, vllm_config: VllmConfig, prefix: str = "") -> None:
         super().__init__()
 
-<<<<<<< HEAD
-        config = vllm_config.model_config.hf_text_config
-=======
         config = vllm_config.model_config.hf_config
->>>>>>> a5354b3ed ([Bugfix][WideEP] Apply TP Attn + EP MoE fix to other models (#24982))
         cache_config = vllm_config.cache_config
         quant_config = vllm_config.quant_config
 
@@ -402,11 +394,7 @@ class Qwen3MoeModel(nn.Module):
     def __init__(self, *, vllm_config: VllmConfig, prefix: str = ""):
         super().__init__()
 
-<<<<<<< HEAD
-        config = vllm_config.model_config.hf_text_config
-=======
         config = vllm_config.model_config.hf_config.get_text_config()
->>>>>>> a5354b3ed ([Bugfix][WideEP] Apply TP Attn + EP MoE fix to other models (#24982))
         quant_config = vllm_config.quant_config
         parallel_config = vllm_config.parallel_config
         eplb_config = parallel_config.eplb_config

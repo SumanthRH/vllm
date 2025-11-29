@@ -105,13 +105,8 @@ class DeepseekV32IndexerMetadata:
 
 # TODO (zyongye) optimize this, this is now vibe coded
 def kv_spans_from_batches(
-<<<<<<< HEAD
-        start_seq_loc: torch.Tensor,
-        seq_len_per_batch: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
-=======
     start_seq_loc: torch.Tensor, seq_len_per_batch: torch.Tensor, device: torch.device
 ) -> tuple[torch.Tensor, torch.Tensor]:
->>>>>>> d6953beb9 (Convert formatting to use `ruff` instead of `yapf` + `isort` (#26247))
     """
     Args:
       start_seq_loc: 1D long tensor [B+1], cumulative counts of
@@ -165,14 +160,9 @@ def kv_spans_from_batches(
     L_expand = torch.repeat_interleave(L, counts)  # [N]
     m_expand = torch.repeat_interleave(counts, counts)  # [N]
     # position within the selected block: 1..counts[b]
-<<<<<<< HEAD
-    pos_within = (torch.arange(N, device=device, dtype=torch.long) -
-                  torch.repeat_interleave(q[:-1], counts) + 1)
-=======
     pos_within = (
         torch.arange(N, dtype=torch.long) - torch.repeat_interleave(q[:-1], counts) + 1
     )
->>>>>>> d6953beb9 (Convert formatting to use `ruff` instead of `yapf` + `isort` (#26247))
 
     local_pos = L_expand - m_expand + pos_within  # [N], 1-based
     end_location = start_tensor + local_pos  # exclusive end
@@ -182,13 +172,6 @@ def kv_spans_from_batches(
 
 def get_max_prefill_buffer_size(vllm_config: VllmConfig):
     max_model_len = vllm_config.model_config.max_model_len
-<<<<<<< HEAD
-    # max_num_batched_tokens = \
-    #     vllm_config.scheduler_config.max_num_batched_tokens
-    max_num_seq = vllm_config.scheduler_config.max_num_seqs
-    # NOTE(Chen): an estimated max size of flattened_kv. Need to double check.
-    return max_model_len * max_num_seq
-=======
     # NOTE(Chen): 2 is a magic number for controlling the prefill buffer size.
     # May be tuned later.
     return max_model_len * 2
@@ -223,7 +206,6 @@ def split_prefill_chunks(
     if total_seq_lens > 0:
         chunk_seq_ids.append((reqs_start, len(seq_lens_cpu)))
     return chunk_seq_ids
->>>>>>> d6953beb9 (Convert formatting to use `ruff` instead of `yapf` + `isort` (#26247))
 
 
 class DeepseekV32IndexerMetadataBuilder(AttentionMetadataBuilder):
@@ -315,28 +297,6 @@ class DeepseekV32IndexerMetadataBuilder(AttentionMetadataBuilder):
 
         prefill_metadata = None
         if num_prefills > 0:
-<<<<<<< HEAD
-            reqs_start = num_decodes
-            prefill_query_start_loc = query_start_loc[
-                reqs_start:] - query_start_loc[reqs_start]
-            cu_seqlen_ks, cu_seqlen_ke = kv_spans_from_batches(
-                prefill_query_start_loc,
-                common_attn_metadata.seq_lens[reqs_start:])
-            total_seq_lens = common_attn_metadata.seq_lens[reqs_start:].sum()
-            assert total_seq_lens < self.max_prefill_buffer_size
-            cu_seq_lens = torch.cat([
-                torch.zeros(1, dtype=torch.int32, device=device),
-                common_attn_metadata.seq_lens[reqs_start:].cumsum(dim=0)
-            ]).to(torch.int32).cuda()
-            prefill_metadata = DeepseekV32IndexerPrefillMetadata(
-                block_table=block_table_tensor[reqs_start:, ...],
-                query_start_loc=prefill_query_start_loc,
-                max_query_len=common_attn_metadata.max_query_len,
-                cu_seqlen_ks=cu_seqlen_ks,
-                cu_seqlen_ke=cu_seqlen_ke,
-                cu_seq_lens=cu_seq_lens,
-                total_seq_lens=total_seq_lens,
-=======
             chunk_seq_ids = split_prefill_chunks(
                 common_attn_metadata.seq_lens_cpu,
                 self.max_prefill_buffer_size,
@@ -354,7 +314,6 @@ class DeepseekV32IndexerMetadataBuilder(AttentionMetadataBuilder):
             ]
             prefill_metadata = DeepseekV32IndexerPrefillMetadata(
                 chunks=chunks,
->>>>>>> d6953beb9 (Convert formatting to use `ruff` instead of `yapf` + `isort` (#26247))
             )
 
         decode_metadata = None
