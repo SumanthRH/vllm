@@ -25,6 +25,16 @@ from vllm.v1.serial_utils import UtilityResult
 # - "keep": Freeze requests in queue; they resume on resume_generation().
 PauseMode = Literal["abort", "wait", "keep"]
 
+# Sentinel for the removed ``clear_cache`` parameter on pause APIs. Any
+# explicit pass (including ``False``) is treated as use of the removed
+# parameter and raises ``ValueError``. The parameter was deprecated via
+# warning since commit 89a385d and is now removed; use
+# ``reset_prefix_cache(reset_external=...)`` separately.
+_CLEAR_CACHE_SENTINEL: Any = object()
+_CLEAR_CACHE_REMOVED_MSG = (
+    "clear_cache is removed; use reset_prefix_cache(reset_external=...) separately."
+)
+
 # These are possible values of RequestOutput.finish_reason,
 # so form part of the external API.
 FINISH_REASON_STRINGS = ("stop", "length", "abort", "error", "repetition")

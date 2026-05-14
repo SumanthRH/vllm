@@ -32,7 +32,7 @@ async def pause_generation(
     raw_request: Request,
     mode: Annotated[PauseMode, Query()] = "abort",
     wait_for_inflight_requests: bool = Query(False),
-    clear_cache: Annotated[bool, Query()] = True,
+    clear_cache: Annotated[bool | None, Query()] = None,
 ) -> JSONResponse:
     """Pause generation requests to allow weight updates.
 
@@ -42,16 +42,27 @@ async def pause_generation(
             - ``"wait"``: Wait for in-flight requests to complete.
             - ``"keep"``: Freeze requests in queue; they resume on /resume.
         wait_for_inflight_requests: DEPRECATED. Use ``mode="wait"`` instead.
-        clear_cache: DEPRECATED. Whether to clear KV/prefix caches after
-            draining. Ignored when mode="keep".
+        clear_cache: REMOVED. Any explicit value (including ``false``)
+            results in HTTP 400. Use ``reset_prefix_cache(reset_external=...)``
+            separately.
     """
+
+    if clear_cache is not None:
+        return JSONResponse(
+            content={
+                "error": (
+                    "clear_cache is removed; use "
+                    "reset_prefix_cache(reset_external=...) separately."
+                )
+            },
+            status_code=HTTPStatus.BAD_REQUEST.value,
+        )
 
     engine = engine_client(raw_request)
 
     try:
         await engine.pause_generation(
             mode=mode,
-            clear_cache=clear_cache,
             wait_for_inflight_requests=wait_for_inflight_requests,
         )
         return JSONResponse(

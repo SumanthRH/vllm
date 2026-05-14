@@ -32,6 +32,8 @@ from vllm.utils.network_utils import (
     make_zmq_socket,
 )
 from vllm.v1.engine import (
+    _CLEAR_CACHE_REMOVED_MSG,
+    _CLEAR_CACHE_SENTINEL,
     EEP_NOTIFICATION_CALL_ID,
     EEPNotificationType,
     EngineCoreOutputs,
@@ -1065,9 +1067,13 @@ class AsyncMPClient(MPClient):
             await self._send_input(EngineCoreRequestType.ABORT, request_ids)
 
     async def pause_scheduler_async(
-        self, mode: PauseMode = "abort", clear_cache: bool = True
+        self,
+        mode: PauseMode = "abort",
+        clear_cache: Any = _CLEAR_CACHE_SENTINEL,
     ) -> None:
-        await self.call_utility_async("pause_scheduler", mode, clear_cache)
+        if clear_cache is not _CLEAR_CACHE_SENTINEL:
+            raise ValueError(_CLEAR_CACHE_REMOVED_MSG)
+        await self.call_utility_async("pause_scheduler", mode)
 
     async def resume_scheduler_async(self) -> None:
         await self.call_utility_async("resume_scheduler")

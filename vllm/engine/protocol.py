@@ -18,7 +18,7 @@ from vllm.pooling_params import PoolingParams
 from vllm.renderers import BaseRenderer
 from vllm.sampling_params import SamplingParams
 from vllm.tasks import SupportedTask
-from vllm.v1.engine import EngineCoreRequest
+from vllm.v1.engine import _CLEAR_CACHE_SENTINEL, EngineCoreRequest
 from vllm.v1.engine.input_processor import InputProcessor
 
 if TYPE_CHECKING:
@@ -186,7 +186,7 @@ class EngineClient(ABC):
         *,
         mode: "PauseMode" = "abort",
         wait_for_inflight_requests: bool = False,
-        clear_cache: bool = True,
+        clear_cache: Any = _CLEAR_CACHE_SENTINEL,
     ) -> None:
         """Pause new generation/encoding requests.
 
@@ -198,8 +198,9 @@ class EngineClient(ABC):
                 - ``"keep"``: Freeze requests in queue; they resume on
                   :meth:`resume_generation`.
             wait_for_inflight_requests: DEPRECATED. Use ``mode="wait"`` instead.
-            clear_cache: DEPRECATED. Whether to clear KV and prefix caches
-                after draining.
+            clear_cache: REMOVED. Any explicit pass (including ``False``)
+                raises ``ValueError``. Use
+                ``reset_prefix_cache(reset_external=...)`` separately.
         """
         ...
 

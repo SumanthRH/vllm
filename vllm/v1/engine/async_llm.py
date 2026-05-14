@@ -37,7 +37,12 @@ from vllm.transformers_utils.config import maybe_register_config_serialize_by_va
 from vllm.usage.usage_lib import UsageContext
 from vllm.utils.async_utils import cancel_task_threadsafe
 from vllm.utils.collection_utils import as_list
-from vllm.v1.engine import EngineCoreRequest, PauseMode
+from vllm.v1.engine import (
+    _CLEAR_CACHE_REMOVED_MSG,
+    _CLEAR_CACHE_SENTINEL,
+    EngineCoreRequest,
+    PauseMode,
+)
 from vllm.v1.engine.core_client import EngineCoreClient
 from vllm.v1.engine.exceptions import EngineDeadError, EngineGenerateError
 from vllm.v1.engine.input_processor import InputProcessor
@@ -752,14 +757,14 @@ class AsyncLLM(EngineClient):
         *,
         mode: PauseMode = "abort",
         wait_for_inflight_requests: bool | None = None,
-        clear_cache: bool = True,
+        clear_cache: Any = _CLEAR_CACHE_SENTINEL,
     ) -> None:
         """
         Pause generation to allow model weight updates.
 
-        All mode handling (abort / wait / keep) and cache clearing is done
-        in the engine. New generation/encoding requests will not be scheduled
-        until resume is called.
+        All mode handling (abort / wait / keep) is done in the engine. New
+        generation/encoding requests will not be scheduled until resume is
+        called.
 
         Args:
             mode: How to handle in-flight requests:
@@ -769,9 +774,12 @@ class AsyncLLM(EngineClient):
                 - ``"keep"``: Freeze requests in queue; they resume on
                   :meth:`resume_generation`.
             wait_for_inflight_requests: DEPRECATED: use mode argument.
-            clear_cache: Whether to clear KV cache and prefix cache after
-                draining. Set to ``False`` to preserve cache for faster resume.
+            clear_cache: REMOVED. Any explicit pass (including ``False``)
+                raises ``ValueError``. Use
+                ``reset_prefix_cache(reset_external=...)`` separately.
         """
+        if clear_cache is not _CLEAR_CACHE_SENTINEL:
+            raise ValueError(_CLEAR_CACHE_REMOVED_MSG)
         if wait_for_inflight_requests:
             warnings.warn(
                 "The `wait_for_inflight_requests` parameter in "
@@ -781,7 +789,7 @@ class AsyncLLM(EngineClient):
                 stacklevel=2,
             )
             mode = "wait"
-        await self.engine_core.pause_scheduler_async(mode=mode, clear_cache=clear_cache)
+        await self.engine_core.pause_scheduler_async(mode=mode)
         # Small sleep to help ensure that final outputs from any in-flight requests are
         # returned prior to this method returning. These outputs come out of the engine
         # prior to the wait-for-idle completion event, but involve additional async

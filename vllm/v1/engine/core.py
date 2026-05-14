@@ -50,6 +50,8 @@ from vllm.v1.core.kv_cache_utils import (
 from vllm.v1.core.sched.interface import PauseState, SchedulerInterface
 from vllm.v1.core.sched.output import SchedulerOutput
 from vllm.v1.engine import (
+    _CLEAR_CACHE_REMOVED_MSG,
+    _CLEAR_CACHE_SENTINEL,
     EEP_NOTIFICATION_CALL_ID,
     EEPNotificationType,
     EngineCoreOutput,
@@ -655,7 +657,9 @@ class EngineCore:
         self.reset_encoder_cache()
 
     def pause_scheduler(
-        self, mode: PauseMode = "abort", clear_cache: bool = True
+        self,
+        mode: PauseMode = "abort",
+        clear_cache: Any = _CLEAR_CACHE_SENTINEL,
     ) -> Future | None:
         """Pause generation; behavior depends on mode.
 
@@ -663,13 +667,19 @@ class EngineCore:
         "wait" allows step() so in-flight requests can drain.
 
         - ``abort``: Set PAUSED_NEW, abort all requests, wait for abort
-          outputs to be sent (when running with output_queue), optionally
-          clear caches, then complete the returned Future.
+          outputs to be sent (when running with output_queue), then complete
+          the returned Future.
         - ``wait``: Set PAUSED_NEW (queue adds, keep stepping); when drained,
-          optionally clear caches, then complete the returned Future.
+          complete the returned Future.
         - ``keep``: Set PAUSED_ALL; return a Future that completes when the
           output queue is empty.
+
+        Cache resetting is no longer performed here; callers that need to
+        clear caches should invoke ``reset_prefix_cache`` /
+        ``_reset_caches`` separately after the pause completes.
         """
+        if clear_cache is not _CLEAR_CACHE_SENTINEL:
+            raise ValueError(_CLEAR_CACHE_REMOVED_MSG)
         if mode not in ("keep", "abort", "wait"):
             raise ValueError(f"Invalid pause mode: {mode}")
         if mode == "wait":
@@ -680,8 +690,6 @@ class EngineCore:
 
         pause_state = PauseState.PAUSED_ALL if mode == "keep" else PauseState.PAUSED_NEW
         self.scheduler.set_pause_state(pause_state)
-        if clear_cache:
-            self._reset_caches()
 
         return None
 
@@ -706,15 +714,17 @@ class EngineCore:
                 documentation of pause_scheduler method.
         """
 
-        # Pause scheduler before sleeping.
-        clear_prefix_cache = level >= 1
-        pause_future = self.pause_scheduler(mode=mode, clear_cache=clear_prefix_cache)
+        # Pause scheduler before sleeping. ``pause_scheduler`` no longer
+        # clears caches itself; ``sleep`` performs cache clearing directly
+        # for level >= 1 once the pause has completed.
+        pause_future = self.pause_scheduler(mode=mode)
         if level < 1:
             return pause_future
 
         # Level 1+: Delegate to executor for GPU memory management
         model_executor = self.model_executor
         if pause_future is None:
+            self._reset_caches()
             model_executor.sleep(level)
             return None
 
@@ -723,6 +733,7 @@ class EngineCore:
         def pause_complete(f: Future):
             try:
                 f.result()  # propagate any exception
+                self._reset_caches()
                 future.set_result(model_executor.sleep(level))
             except Exception as e:
                 future.set_exception(e)
@@ -1563,7 +1574,9 @@ class EngineCoreProc(EngineCore):
         self._send_error_outputs_to_client([request.request_id], request.client_index)
 
     def pause_scheduler(
-        self, mode: PauseMode = "abort", clear_cache: bool = True
+        self,
+        mode: PauseMode = "abort",
+        clear_cache: Any = _CLEAR_CACHE_SENTINEL,
     ) -> Future | None:
         """Pause generation; behavior depends on mode.
 
@@ -1571,19 +1584,23 @@ class EngineCoreProc(EngineCore):
         "wait" allows step() so in-flight requests can drain.
 
         - ``abort``: Set PAUSED_NEW, abort all requests, wait for abort
-          outputs to be sent (when running with output_queue), optionally
-          clear caches, then complete the returned Future.
+          outputs to be sent (when running with output_queue), then complete
+          the returned Future.
         - ``wait``: Set PAUSED_NEW (queue adds, keep stepping); when drained,
-          optionally clear caches, then complete the returned Future.
+          complete the returned Future.
         - ``keep``: Set PAUSED_ALL; return a Future that completes when the
           output queue is empty.
+
+        Cache resetting is no longer performed here; callers that need to
+        clear caches should invoke ``reset_prefix_cache`` /
+        ``_reset_caches`` separately after the pause completes.
         """
+        if clear_cache is not _CLEAR_CACHE_SENTINEL:
+            raise ValueError(_CLEAR_CACHE_REMOVED_MSG)
         if mode not in ("keep", "abort", "wait"):
             raise ValueError(f"Invalid pause mode: {mode}")
 
         def engine_idle_callback(engine: "EngineCoreProc", future: Future[Any]) -> None:
-            if clear_cache:
-                engine._reset_caches()
             future.set_result(None)
 
         if mode == "abort":
@@ -1596,8 +1613,6 @@ class EngineCoreProc(EngineCore):
         self.scheduler.set_pause_state(pause_state)
 
         if self._pause_complete():
-            if clear_cache:
-                self._reset_caches()
             return None
 
         future = Future[Any]()
