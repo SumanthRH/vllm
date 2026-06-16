@@ -213,6 +213,11 @@ class ModelConfig:
     flexibility."""
     enable_return_routed_experts: bool = False
     """Whether to return routed experts."""
+    enable_fp32_lm_head: bool = False
+    """If set, the LM head outputs (logits) are computed in FP32, regardless of
+    the model/activation dtype. Reduces the numeric error of the final
+    projection at a small cost. Useful for RL, where inference logprobs are
+    compared against trainer logprobs."""
     max_logprobs: int = 20
     """Maximum number of log probabilities to return when `logprobs` is
     specified in `SamplingParams`. The default value comes the default for the
@@ -375,6 +380,7 @@ class ModelConfig:
             "tokenizer_revision",
             "spec_target_max_model_len",
             "enforce_eager",
+            "enable_fp32_lm_head",
             "logprobs_mode",
             "use_fp64_gumbel",
             "disable_cascade_attn",

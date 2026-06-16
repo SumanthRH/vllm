@@ -4,6 +4,7 @@
 
 import torch
 
+from vllm.config import get_current_vllm_config
 from vllm.distributed import (
     get_tensor_model_parallel_world_size,
     tensor_model_parallel_all_gather,
@@ -50,6 +51,18 @@ class LogitsProcessor(PluggableLayer):
         self.soft_cap = soft_cap
         # Whether to use gather or all-gather to gather the logits.
         self.use_all_gather = current_platform.use_all_gather()
+        # Whether to compute the LM-head projection in FP32 (see
+        # ModelConfig.enable_fp32_lm_head). Read here, at model-build time, while
+        # the ambient VllmConfig is set; falls back to False when unavailable
+        # (e.g. a bare LogitsProcessor built in a unit test).
+        self.use_fp32_lm_head = False
+        try:
+            model_config = get_current_vllm_config().model_config
+            self.use_fp32_lm_head = bool(
+                getattr(model_config, "enable_fp32_lm_head", False)
+            )
+        except Exception:
+            self.use_fp32_lm_head = False
 
     def forward(
         self,
@@ -93,7 +106,23 @@ class LogitsProcessor(PluggableLayer):
         embedding_bias: torch.Tensor | None,
     ) -> torch.Tensor | None:
         # Get the logits for the next tokens.
-        logits = lm_head.quant_method.apply(lm_head, hidden_states, bias=embedding_bias)
+        # FP32 projection only for the plain unquantized head: a real float
+        # weight (not int/fp8 packed) and no bias. Quantized / LoRA-wrapped /
+        # bias'd heads fall back to the normal quant_method path.
+        weight = getattr(lm_head, "weight", None)
+        if (
+            self.use_fp32_lm_head
+            and weight is not None
+            and embedding_bias is None
+            and weight.dtype in (torch.float16, torch.bfloat16, torch.float32)
+        ):
+            logits = torch.matmul(
+                hidden_states.to(torch.float32), weight.to(torch.float32).t()
+            )
+        else:
+            logits = lm_head.quant_method.apply(
+                lm_head, hidden_states, bias=embedding_bias
+            )
 
         # Gather logits for TP
         logits = self._gather_logits(logits)

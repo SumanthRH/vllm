@@ -214,6 +214,20 @@ def test_jit_monitor_verbose_arg():
     assert EngineArgs(model="test", jit_monitor_verbose=True).jit_monitor_verbose
 
 
+def test_enable_fp32_lm_head_arg():
+    parser = EngineArgs.add_cli_args(FlexibleArgumentParser())
+
+    # Off by default.
+    args = parser.parse_args(["--model", "test"])
+    assert EngineArgs.from_cli_args(args).enable_fp32_lm_head is False
+
+    # store_true flag enables it.
+    args = parser.parse_args(["--model", "test", "--enable-fp32-lm-head"])
+    assert args.enable_fp32_lm_head is True
+    assert EngineArgs.from_cli_args(args).enable_fp32_lm_head is True
+    assert EngineArgs(model="test", enable_fp32_lm_head=True).enable_fp32_lm_head
+
+
 def test_hf_token_get_kwargs():
     kwargs = get_kwargs(ModelConfig)["hf_token"]
 
