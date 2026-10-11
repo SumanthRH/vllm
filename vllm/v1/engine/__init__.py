@@ -288,6 +288,9 @@ class EngineCoreOutputs(
     # "old" wave, so the next wave needs to be started in other engines.
     start_wave: int | None = None
 
+    # Weight version used for this step.
+    weight_version: str | None = None
+
     # Lightweight readiness progress published by EngineCore. These fields
     # are consumed by the frontend and are not exposed in request results.
     ready_progress_seq: int | None = None
